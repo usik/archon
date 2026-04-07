@@ -7,18 +7,19 @@ description: >
 culture: Amazon / AWS
 category: feature-dev
 
+observation_space:
+  - read_file
+  - search_codebase
+  - search_docs
+  - read_context
+
 action_space:
-  tools:
-    - read_file
-    - search_codebase
-    - write_file
-    - run_tests
-    - run_linter
-    - create_branch
-    - create_pr
-    - create_ticket
-    - search_docs
-    - read_context
+  - write_file
+  - run_tests
+  - run_linter
+  - create_branch
+  - create_pr
+  - create_ticket
 
 workflow:
   phases:

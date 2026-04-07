@@ -15,16 +15,17 @@ description: |
 inspired_by: Shopify
 source_url: https://shopify.engineering/great-code-reviews
 
+observation_space:
+  - read_diff
+  - read_file
+  - search_codebase
+
 action_space:
-  tools:
-    - read_diff
-    - read_file
-    - search_codebase
-    - post_inline
-    - post_summary
-    - approve
-    - request_changes
-    - suggest_change
+  - post_inline
+  - post_summary
+  - approve
+  - request_changes
+  - suggest_change
 
 review_criteria:
   required:

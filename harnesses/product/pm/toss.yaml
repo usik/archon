@@ -8,15 +8,16 @@ description: >
 culture: Toss (토스 / Viva Republica)
 category: product-management
 
+observation_space:
+  - read_file
+  - search_codebase
+  - search_docs
+  - read_context
+
 action_space:
-  tools:
-    - read_file
-    - search_codebase
-    - write_file
-    - create_ticket
-    - post_summary
-    - search_docs
-    - read_context
+  - write_file
+  - create_ticket
+  - post_summary
 
 review_criteria:
   required:

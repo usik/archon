@@ -1,29 +1,38 @@
 import { z } from "zod";
 
-// ─── Tool definitions ────────────────────────────────────────────────────────
+// ─── Observation tools (read / perceive) ─────────────────────────────────────
+// What the agent can SEE. No side effects.
 
-export const ToolName = z.enum([
-  // PR review tools
+export const ObservationTool = z.enum([
   "read_diff",       // read the full PR/MR diff
   "read_file",       // read a specific file for context
   "search_codebase", // grep/search patterns in the repo
+  "search_docs",     // search documentation
+  "read_context",    // read project context (AGENTS.md, CLAUDE.md, README)
+]);
+
+export type ObservationTool = z.infer<typeof ObservationTool>;
+
+// ─── Action tools (write / execute) ──────────────────────────────────────────
+// What the agent can DO. Has side effects.
+
+export const ActionTool = z.enum([
+  // Review actions
   "post_inline",     // post inline comment on a specific line
-  "post_summary",    // post overall PR summary comment
+  "post_summary",    // post overall PR/task summary comment
   "approve",         // approve the PR
   "request_changes", // formally request changes (blocks merge)
   "suggest_change",  // suggest a specific code change (GitHub suggestion block)
-  // Feature development tools
+  // Development actions
   "write_file",      // create or modify a file
   "run_tests",       // execute test suite
+  "run_linter",      // run linter/formatter
   "create_branch",   // create a git branch
   "create_pr",       // open a pull request
   "create_ticket",   // create a task/issue in the ticketing system
-  "run_linter",      // run linter/formatter
-  "search_docs",     // search documentation
-  "read_context",    // read project context / AGENTS.md / CLAUDE.md
 ]);
 
-export type ToolName = z.infer<typeof ToolName>;
+export type ActionTool = z.infer<typeof ActionTool>;
 
 // ─── Review criteria ─────────────────────────────────────────────────────────
 
@@ -47,7 +56,7 @@ export const ReviewCriteria = z.object({
 
 export const CommentTone = z.enum([
   "mentoring",     // Google: explain the why, use Nit:, encourage learning
-  "direct",        // Uber: clear, structured, signal-to-noise focused
+  "direct",        // Uber/AWS: clear, structured, signal-to-noise focused
   "collaborative", // Shopify/Microsoft: "we" language, treat as shared code
   "trust_based",   // Netflix: minimal friction, high autonomy
   "supportive",    // LinkedIn/Airbnb: growth mindset, professional development
@@ -88,11 +97,6 @@ export const SeveritySystem = z.object({
 // ─── Approval policy ─────────────────────────────────────────────────────────
 
 export const ApprovalPolicy = z.object({
-  /**
-   * - "net_positive": approve if code improves overall health (Google)
-   * - "all_blocking_resolved": approve only when all blocking issues resolved
-   * - "manual_only": never auto-approve; always human decision
-   */
   strategy: z.enum(["net_positive", "all_blocking_resolved", "manual_only"]),
   /** Guiding principle to surface in the review summary */
   principle: z.string().optional(),
@@ -101,29 +105,24 @@ export const ApprovalPolicy = z.object({
 // ─── PR size policy ───────────────────────────────────────────────────────────
 
 export const SizePolicy = z.object({
-  /** Warn (but don't block) when PR exceeds this LOC */
   warn_above_loc: z.number().nullish(),
-  /** Block review with message when PR exceeds this LOC */
   block_above_loc: z.number().nullish(),
-  /** Advice to give when PR is too large */
   split_advice: z.string().nullish(),
 });
 
 // ─── HITL gates ───────────────────────────────────────────────────────────────
 
 export const HitlAction = z.enum([
-  "flag_for_security_review",  // escalate to security team
-  "flag_for_domain_expert",    // needs specific domain expertise
-  "require_human_approval",    // block until a human explicitly approves
+  "flag_for_security_review",    // escalate to security team
+  "flag_for_domain_expert",      // needs specific domain expertise
+  "require_human_approval",      // block until a human explicitly approves
   "request_architecture_review", // escalate to staff/principal engineer
-  "notify_only",               // inform stakeholders without blocking
+  "notify_only",                 // inform stakeholders without blocking
 ]);
 
 export const HitlGate = z.object({
-  /** Plain-English condition that triggers this gate */
   trigger: z.string(),
   action: HitlAction,
-  /** Explanation shown to the reviewer */
   message: z.string(),
 });
 
@@ -132,36 +131,42 @@ export const HitlGate = z.object({
 export const SpecialFocus = z.object({
   name: z.string(),
   description: z.string(),
-  /** Patterns/keywords that activate this focus */
   activate_on: z.array(z.string()).default([]),
-  /** Additional instructions to apply */
   instructions: z.string(),
 });
 
-// ─── Root harness schema ──────────────────────────────────────────────────────
+// ─── Root harness schema (OAKP model) ─────────────────────────────────────────
+//
+//  O — Observation space  what the agent can perceive (read-only)
+//  A — Action space       what the agent can do (has side effects)
+//  K — Knowledge          domain criteria + special focus areas
+//  P — Permission         hitl_gates + severity + approval policy
 
 export const HarnessSchema = z.object({
-  /** Unique identifier for this harness */
   name: z.string(),
   version: z.string(),
   description: z.string(),
-  /** Company/style this harness is based on */
   inspired_by: z.string().optional(),
-  /** Link to source documentation */
   source_url: z.string().optional(),
 
-  action_space: z.object({
-    tools: z.array(ToolName),
-  }),
+  // O — Observation space
+  observation_space: z.array(ObservationTool),
 
+  // A — Action space
+  action_space: z.array(ActionTool),
+
+  // K — Knowledge (review_criteria + special_focus)
   review_criteria: ReviewCriteria,
-  comment_style: CommentStyle,
+  special_focus: z.array(SpecialFocus).default([]),
+
+  // P — Permission (hitl_gates + severity + approval + size)
+  hitl_gates: z.array(HitlGate).default([]),
   severity: SeveritySystem,
   approval: ApprovalPolicy,
   size: SizePolicy.optional(),
-  hitl_gates: z.array(HitlGate).default([]),
-  /** Domain-specific focus areas (e.g. accessibility, API contracts) */
-  special_focus: z.array(SpecialFocus).default([]),
+
+  // Comment style (output formatting)
+  comment_style: CommentStyle,
 });
 
 export type Harness = z.infer<typeof HarnessSchema>;

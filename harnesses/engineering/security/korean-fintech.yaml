@@ -7,15 +7,16 @@ description: >
 culture: Korean Fintech (토스 / 카카오페이 / 네이버페이 style)
 category: security
 
+observation_space:
+  - read_diff
+  - read_file
+  - search_codebase
+
 action_space:
-  tools:
-    - read_diff
-    - read_file
-    - search_codebase
-    - post_inline
-    - post_summary
-    - request_changes
-    - create_ticket
+  - post_inline
+  - post_summary
+  - request_changes
+  - create_ticket
 
 review_criteria:
   required:

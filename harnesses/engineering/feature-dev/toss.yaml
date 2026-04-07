@@ -25,19 +25,20 @@ description: |
 inspired_by: Toss (토스 / Viva Republica)
 source_url: https://toss.tech/article/harness-for-team-productivity
 
+observation_space:
+  - read_file            # understand existing patterns
+  - search_codebase      # find related code, conventions, examples
+  - read_diff            # read recent changes for context
+  - read_context         # read AGENTS.md, CLAUDE.md, project docs
+
 action_space:
-  tools:
-    - read_file            # understand existing patterns
-    - search_codebase      # find related code, conventions, examples
-    - read_diff            # read recent changes for context
-    - write_file           # implement feature
-    - run_tests            # validate implementation
-    - create_branch        # create feature branch per naming convention
-    - create_ticket        # create Jira/Linear ticket with context
-    - post_inline          # comment on specific lines
-    - post_summary         # post overall summary
-    - approve              # approve when complete
-    - request_changes      # flag issues
+  - write_file           # implement feature
+  - run_tests            # validate implementation
+  - create_branch        # create feature branch per naming convention
+  - create_ticket        # create Jira/Linear ticket with context
+  - post_inline          # comment on specific lines
+  - post_summary         # post overall summary
+  - request_changes      # flag issues
 
 review_criteria:
   required:

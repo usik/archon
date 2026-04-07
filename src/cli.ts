@@ -65,7 +65,7 @@ program
       console.log(chalk.green(`✓ ${harness.name} v${harness.version} is valid`));
 
       // Summary
-      console.log(chalk.dim(`  Tools: ${harness.action_space.tools.length}`));
+      console.log(chalk.dim(`  Observation: ${harness.observation_space.length} tools, Action: ${harness.action_space.length} tools`));
       console.log(
         chalk.dim(
           `  Criteria: ${harness.review_criteria.required.length} required, ` +

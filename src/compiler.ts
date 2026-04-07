@@ -34,30 +34,43 @@ export function compile(harness: Harness): string {
   }
   lines.push("");
 
-  // ── Action Space ─────────────────────────────────────────────────────────
+  // ── OAKP: Observation + Action Space ─────────────────────────────────────
+  const observationDescriptions: Record<string, string> = {
+    read_diff:       "**read_diff** — Read the full PR diff",
+    read_file:       "**read_file** — Read a complete file for context",
+    search_codebase: "**search_codebase** — Search/grep the repo for patterns, usages, or related code",
+    search_docs:     "**search_docs** — Search documentation and reference material",
+    read_context:    "**read_context** — Read project context files (AGENTS.md, CLAUDE.md, README)",
+  };
+  const actionDescriptions: Record<string, string> = {
+    post_inline:     "**post_inline** — Post an inline comment on a specific line",
+    post_summary:    "**post_summary** — Post an overall summary comment",
+    approve:         "**approve** — Approve the PR (only when all blocking issues resolved)",
+    request_changes: "**request_changes** — Formally request changes (blocks merge)",
+    suggest_change:  "**suggest_change** — Propose a specific code replacement",
+    write_file:      "**write_file** — Create or modify a file",
+    run_tests:       "**run_tests** — Execute the test suite",
+    run_linter:      "**run_linter** — Run linter/formatter",
+    create_branch:   "**create_branch** — Create a git branch",
+    create_pr:       "**create_pr** — Open a pull request",
+    create_ticket:   "**create_ticket** — Create a task/issue in the ticketing system",
+  };
+
+  lines.push("## Observation Space");
+  lines.push("");
+  lines.push("What you can **perceive**. Read-only. No side effects.");
+  lines.push("");
+  for (const tool of harness.observation_space) {
+    lines.push(`- ${observationDescriptions[tool] ?? `**${tool}**`}`);
+  }
+  lines.push("");
+
   lines.push("## Action Space");
   lines.push("");
-  lines.push(
-    "You have access to the following tools. Use only what is necessary."
-  );
+  lines.push("What you can **do**. These have side effects — use only what is necessary.");
   lines.push("");
-  const toolDescriptions: Record<string, string> = {
-    read_diff: "**read_diff** — Read the full PR diff to understand all changes",
-    read_file:
-      "**read_file** — Read a complete file for context beyond the diff",
-    search_codebase:
-      "**search_codebase** — Search/grep the codebase for patterns, usages, or related code",
-    post_inline:
-      "**post_inline** — Post an inline comment on a specific line of the diff",
-    post_summary: "**post_summary** — Post an overall PR summary comment",
-    approve: "**approve** — Approve the PR (use only when all blocking issues are resolved)",
-    request_changes:
-      "**request_changes** — Formally request changes (blocks merge until resolved)",
-    suggest_change:
-      "**suggest_change** — Propose a specific code replacement via a suggestion block",
-  };
-  for (const tool of harness.action_space.tools) {
-    lines.push(`- ${toolDescriptions[tool] ?? `**${tool}**`}`);
+  for (const tool of harness.action_space) {
+    lines.push(`- ${actionDescriptions[tool] ?? `**${tool}**`}`);
   }
   lines.push("");
 
@@ -114,8 +127,9 @@ export function compile(harness: Harness): string {
   // Step 3: Gather context
   lines.push("### Step 3 — Gather Context");
   lines.push("");
+  const obsTools = harness.observation_space.filter(t => t !== "read_diff").join("`, `");
   lines.push(
-    "Use `read_file` and `search_codebase` to understand the surrounding context:"
+    `Use \`${obsTools}\` to understand the surrounding context:`
   );
   lines.push("- Read files that are heavily modified");
   lines.push("- Search for usages of changed functions/methods");

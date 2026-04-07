@@ -15,16 +15,17 @@ description: |
 inspired_by: Uber
 source_url: https://www.uber.com/blog/ureview/
 
+observation_space:
+  - read_diff
+  - read_file
+  - search_codebase
+
 action_space:
-  tools:
-    - read_diff
-    - read_file
-    - search_codebase
-    - post_inline
-    - post_summary
-    - approve
-    - request_changes
-    - suggest_change
+  - post_inline
+  - post_summary
+  - approve
+  - request_changes
+  - suggest_change
 
 review_criteria:
   required:

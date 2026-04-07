@@ -9,17 +9,18 @@ description: >
 culture: Amazon / AWS
 category: architecture
 
+observation_space:
+  - read_file
+  - search_codebase
+  - search_docs
+  - read_context
+
 action_space:
-  tools:
-    - read_file
-    - search_codebase
-    - write_file
-    - post_summary
-    - post_inline
-    - request_changes
-    - create_ticket
-    - search_docs
-    - read_context
+  - write_file
+  - post_summary
+  - post_inline
+  - request_changes
+  - create_ticket
 
 review_criteria:
   required:
