@@ -1,0 +1,274 @@
+# Toss Frontend Development Harness
+# Inspired by: Toss (토스 / Viva Republica)
+#
+# Philosophy: Toss builds consumer fintech UI that millions of Koreans use daily.
+# Performance, accessibility, and PIPA-compliant form handling are non-negotiable.
+# Component-driven development, design system adherence, and micro-interaction
+# quality define Toss frontend culture.
+
+name: toss-frontend-dev
+version: 1.0.0
+description: |
+  Frontend development workflow following Toss engineering culture.
+  Component-driven, design-system-first, performance-budgeted, and PIPA-compliant.
+
+  Workflow: seed context → find design system patterns → implement components →
+  verify performance budget → accessibility check → write tests → open PR.
+  No layout shifts. No float arithmetic. No PII in logs. No untested interactions.
+inspired_by: Toss (토스 / Viva Republica)
+
+observation_space:
+  - read_file            # understand existing component patterns
+  - search_codebase      # find design system tokens, similar components
+  - read_diff            # read recent UI changes for context
+  - read_context         # read AGENTS.md, CLAUDE.md, design system docs
+
+action_space:
+  - write_file           # implement components and feature code
+  - run_tests            # validate component behavior
+  - run_linter           # enforce code style and a11y rules
+  - create_branch        # create feature branch per naming convention
+  - post_inline          # comment on specific lines
+  - post_summary         # post overall summary
+  - request_changes      # flag issues
+
+provider_hint:
+  tier: balanced
+  reason: Standard frontend tasks. Upgrade to high_reasoning for payment flow UI.
+
+loop:
+  style: agentic
+  max_iterations: 20
+  think_before_act: true
+  reflect_after_act: true
+  on_stuck: escalate_to_human
+
+memory:
+  always_read:
+    - AGENTS.md
+    - CLAUDE.md
+    - docs/design-system.md
+    - docs/conventions.md
+  context_patterns:
+    - "*.tokens.ts"
+    - "*.stories.tsx"
+    - "CHANGELOG.md"
+  persist_after_task:
+    - New design system tokens or components introduced
+    - Performance budget decisions and measurements
+    - HITL gates triggered and outcomes
+    - Accessibility patterns established
+
+grounding:
+  - name: design-system-patterns-found
+    applies_to: write_file
+    require: >
+      Before writing any component code, confirm:
+        1. You have searched for existing similar components in the design system
+        2. You have identified the correct design tokens to use (color, spacing, typography)
+        3. You understand the component composition patterns used in this codebase
+        4. For any form collecting PII: consent pattern has been identified
+      Do not write components without first understanding the design system context.
+
+  - name: tests-pass-before-pr
+    applies_to: create_pr
+    require: >
+      Before opening a PR:
+        1. All component tests pass (run_tests result is green)
+        2. No a11y violations from linter (run_linter result is clean)
+        3. Core Web Vitals not regressed (LCP, FID, CLS checked)
+        4. PR description includes: what changed, how to test visually, a11y notes
+      Do not open a PR with failing tests or a11y violations.
+
+handoffs:
+  - to_role: Design Reviewer
+    description: >
+      When implementation is complete, hand off to Design Reviewer to verify
+      pixel-accuracy, animation quality, and design system conformance.
+    output_sections:
+      - Visual diff or screenshot of the component
+      - Design system tokens used
+      - Responsive breakpoints verified
+      - Micro-interaction behavior described
+    required_fields:
+      - design_token_list
+      - responsive_breakpoints
+      - component_story_link
+
+review_criteria:
+  required:
+    - name: component_design
+      description: |
+        Reusable, composable components. No one-off components without justification.
+        Design system tokens used consistently for color, spacing, and typography.
+        Components must be self-contained with documented props interface.
+        If a new component is introduced, it must be added to the design system story.
+      weight: 3
+
+    - name: performance_budget
+      description: |
+        Core Web Vitals must not regress: LCP < 2.5s, FID < 100ms, CLS < 0.1.
+        No layout shifts — elements must not move after initial paint.
+        Images must be optimized: correct format (WebP/AVIF), lazy loading, explicit dimensions.
+        Bundle size impact must be assessed for new dependencies.
+      weight: 3
+
+    - name: accessibility
+      description: |
+        WCAG 2.1 AA minimum. Korean screen reader compatibility required
+        (NVDA on Windows, iOS VoiceOver). Touch targets must be ≥ 44px.
+        All interactive elements must have accessible names.
+        Focus management must be correct for modals and dynamic content.
+        Color contrast ratio ≥ 4.5:1 for normal text, ≥ 3:1 for large text.
+      weight: 3
+
+    - name: state_management
+      description: |
+        Clear data flow. No prop drilling beyond 2 levels — use context or
+        state management for deeper trees. Server state (API data) must be
+        clearly distinguished from client state (UI state).
+        Loading, error, and empty states must all be handled explicitly.
+      weight: 3
+
+    - name: test_coverage
+      description: |
+        Every interactive component has a test. Tests must cover:
+        render behavior, user interactions, loading states, error states.
+        Payment flows require additional: edge cases, zero amounts, retry behavior.
+        Accessibility must be tested with jest-axe or equivalent.
+      weight: 3
+
+    - name: pr_description_quality
+      description: |
+        PR description must include: what changed, why it changed,
+        how to test visually, any a11y considerations, and design system tokens used.
+        Screenshots or Storybook links recommended for visual changes.
+      weight: 2
+
+  conditional:
+    - name: pii_form_handling
+      description: |
+        Any form collecting personal data (name, phone, financial info) must:
+        - Mask input where appropriate (e.g. card numbers, account numbers)
+        - Not log field values — never console.log PII
+        - Use correct HTML autocomplete attributes (autocomplete="cc-number" etc.)
+        - Include PIPA consent checkbox with explicit scope
+        - Implement data retention UX (inform user how long data is kept)
+        PIPA (개인정보보호법) compliance is non-negotiable for all PII-touching forms.
+      trigger: pii_form_detected
+      weight: 3
+
+    - name: payment_ui_safety
+      description: |
+        Payment and financial amount displays must:
+        - Use integer arithmetic for all money calculations (no floats)
+        - Show amounts in correct Korean won format (₩ prefix, comma separators)
+        - Handle zero, negative, and maximum value edge cases in display
+        - Show confirmation step before any irreversible financial action
+      trigger: payment_or_financial_ui
+      weight: 3
+
+    - name: animation_performance
+      description: |
+        Animations must:
+        - Use CSS transforms and opacity (GPU-composited properties only)
+        - Not animate layout properties (width, height, top, left)
+        - Respect prefers-reduced-motion media query
+        - Not run at < 60fps on mid-range devices
+      trigger: animation_or_transition_added
+      weight: 2
+
+comment_style:
+  tone: direct
+  nit_prefix: "제안:"
+  require_explanation: true
+  affirmations: false
+  collective_ownership: true
+  max_comment_length: 300
+
+severity:
+  blocking_triggers:
+    - pii_form_without_consent_check
+    - layout_shift_regression
+    - accessibility_violation_critical
+    - float_arithmetic_for_money
+    - missing_touch_target_size
+    - pii_logged_to_console
+    - design_system_token_hardcoded_value
+  non_blocking_triggers:
+    - minor_naming_suggestion
+    - optional_animation_improvement
+    - documentation_improvement
+    - non_critical_a11y_suggestion
+  default: non_blocking
+
+approval:
+  strategy: all_blocking_resolved
+  principle: |
+    Toss ships fast — but never at the cost of accessibility, performance, or PIPA compliance.
+    Approve when: design system patterns followed, performance budget maintained,
+    a11y checks green, and all PII forms have consent mechanisms.
+
+size:
+  warn_above_loc: 400
+  block_above_loc: null
+  split_advice: |
+    이 PR이 너무 큽니다. 다음과 같이 분리를 검토해 주세요:
+    1. 컴포넌트 추가 PR (새 디자인 시스템 컴포넌트)
+    2. 기능 구현 PR (컴포넌트를 조합한 실제 기능)
+    작은 PR이 디자인 리뷰를 더 빠르게 받을 수 있습니다.
+
+hitl_gates:
+  - trigger: pii_form_detected
+    action: require_human_approval
+    message: |
+      개인정보를 수집하는 폼이 감지되었습니다.
+      PIPA(개인정보보호법) 준수 여부를 확인해야 합니다:
+      - 동의 체크박스 포함 여부
+      - 입력값 마스킹 적용 여부
+      - PII 콘솔 로깅 없음 확인
+      보안팀 검토 후 진행하세요.
+
+  - trigger: design_system_deviation
+    action: notify_only
+    message: |
+      디자인 시스템 토큰을 사용하지 않는 하드코딩된 값이 감지되었습니다.
+      의도된 변경이라면 디자인팀과 함께 새 토큰 추가를 검토해 주세요.
+
+special_focus:
+  - name: design_system_first
+    description: |
+      Every component must be an expression of the design system, not an exception to it.
+      Before writing a single line of component code, identify the tokens and patterns.
+    activate_on: []
+    instructions: |
+      STEP 0 — Design System Context Protocol:
+      1. Search for the design system token files (colors, spacing, typography)
+      2. Find 3 existing components similar to what you're building
+      3. Identify the composition patterns (compound components, render props, etc.)
+      4. Check if the component already exists under a different name
+      5. Only then write the new component, using tokens throughout
+      "디자인 시스템 없이 컴포넌트를 만들면, 다음 개발자가 고통받습니다."
+
+  - name: core_web_vitals_awareness
+    description: |
+      Every UI change is a potential performance regression. Measure before and after.
+    activate_on:
+      - "Image"
+      - "lazy"
+      - "dynamic"
+      - "import("
+    instructions: |
+      Performance checklist for any UI change:
+      - Does this add a new image? → Verify WebP/AVIF format and explicit dimensions
+      - Does this add a dynamic import? → Verify the chunk size is reasonable
+      - Does this add animation? → Verify GPU-composited properties only
+      - Does this change layout? → Check for CLS impact (elements shifting after load)
+      Core Web Vitals are a product quality signal, not just an engineering metric.
+
+targets:
+  mode: team
+  claude_code:
+    slash_command: toss-frontend-dev
+  openharness:
+    skill_path: toss-frontend-dev

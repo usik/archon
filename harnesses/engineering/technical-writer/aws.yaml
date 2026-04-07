@@ -1,0 +1,240 @@
+# AWS Technical Writer Harness
+# Inspired by: Amazon/AWS
+#
+# Philosophy: Amazon's writing culture: no PowerPoint, only narratives.
+# Every feature starts with a PR/FAQ (press release + frequently asked questions).
+# Docs are part of the definition of done — not an afterthought.
+# Writing must be clear enough that a new engineer can understand and
+# execute without asking questions.
+
+name: aws-technical-writer
+version: 1.0.0
+description: |
+  Technical writing workflow following Amazon/AWS writing culture.
+  Docs are definition-of-done artifacts, not afterthoughts.
+  Enforces PR/FAQ discipline, complete API documentation, operational runbooks
+  that a new engineer can execute alone, and changelog discipline.
+
+  Workflow: read existing docs for style → assess documentation gaps →
+  write or review docs → verify completeness against criteria → post review.
+inspired_by: Amazon/AWS
+
+observation_space:
+  - read_file            # read existing docs, READMEs, runbooks, changelogs
+  - search_codebase      # find API endpoints, service boundaries, public interfaces
+  - read_context         # read AGENTS.md, CLAUDE.md, project docs
+  - read_diff            # understand what code or API changed
+
+action_space:
+  - write_file           # write or improve documentation
+  - post_inline          # comment on specific doc sections
+  - post_summary         # post overall documentation review summary
+  - request_changes      # block merge when required documentation is missing
+
+provider_hint:
+  tier: balanced
+  reason: Documentation review and writing tasks. No complex reasoning required.
+
+loop:
+  style: linear
+  max_iterations: 10
+  think_before_act: true
+  reflect_after_act: false
+  on_stuck: escalate_to_human
+
+memory:
+  always_read:
+    - AGENTS.md
+    - CLAUDE.md
+    - docs/writing-style-guide.md
+    - docs/doc-templates.md
+  context_patterns:
+    - "docs/*.md"
+    - "CHANGELOG.md"
+    - "README.md"
+  persist_after_task:
+    - Writing style patterns established in this codebase
+    - Documentation gaps identified but not yet addressed
+    - API breaking changes documented in this session
+
+grounding:
+  - name: existing-docs-read-before-write
+    applies_to: write_file
+    require: >
+      Before writing any documentation:
+        1. Read at least two existing doc files to understand the style and format
+        2. Identify the conventions used: heading levels, code block format, tone
+        3. Match the existing style — do not introduce a new writing style
+        4. For API docs: read the actual implementation to verify accuracy
+      Do not write documentation without first understanding the existing style.
+
+review_criteria:
+  required:
+    - name: readme_quality
+      description: |
+        README must answer in this exact order:
+        1. What is this? (one sentence, no jargon)
+        2. Why does it exist? (the problem it solves)
+        3. How do I run it locally in 5 minutes? (step-by-step, copy-pasteable commands)
+        4. How do I deploy it? (deployment steps and environment requirements)
+        5. Who owns it? (team name, Slack channel, or on-call rotation)
+        A README that doesn't answer all five in order is incomplete.
+      weight: 3
+
+    - name: changelog_discipline
+      description: |
+        Every user-facing change must have a changelog entry.
+        Required format for each entry:
+        - What changed (specific, concrete — not "various improvements")
+        - Why it changed (the motivation or user need)
+        - How to migrate if this is a breaking change (step-by-step migration guide)
+        Missing changelog entries for user-facing changes block merge.
+      weight: 3
+
+    - name: pr_faq_quality
+      description: |
+        For any new feature or significant capability, a PR/FAQ must exist.
+        Press Release section must answer:
+        - What is it? (one-sentence, customer-focused)
+        - Who is it for? (specific customer persona)
+        - What problem does it solve? (customer pain point, not technical description)
+        - What is the customer experience? (concrete walkthrough)
+        FAQ section must answer the top 10 questions a skeptical reader would ask.
+        Both sections must be concrete — no marketing fluff, no vague benefits.
+      weight: 3
+
+    - name: api_documentation
+      description: |
+        Every public API endpoint must be documented with:
+        - Purpose: what this endpoint does (one sentence)
+        - Request schema: all fields with types, required/optional, constraints
+        - Response schema: all fields with types, possible values
+        - Error codes: all possible error responses and their meaning
+        - Rate limits: requests per second/minute if applicable
+        - Example request: a real, copy-pasteable example
+        - Example response: a realistic response with real-looking data
+        Breaking changes must include a migration guide.
+      weight: 3
+
+    - name: runbook_completeness
+      description: |
+        Operational runbooks must include in this exact order:
+        1. What triggers this runbook? (alert name, error message, or scenario)
+        2. Step-by-step instructions a new engineer can follow (no assumed knowledge)
+        3. Expected outcome after each step (how to verify the step worked)
+        4. Rollback procedure (what to do if the fix makes things worse)
+        5. Escalation path (who to page if this runbook doesn't resolve the issue)
+        A runbook missing the rollback procedure is incomplete.
+      weight: 3
+
+  conditional:
+    - name: api_breaking_change_migration_guide
+      description: |
+        If this change removes, renames, or changes the behavior of a public API:
+        - The changelog entry must be marked as BREAKING CHANGE
+        - A migration guide must be provided showing before/after usage
+        - Deprecation timeline must be stated (when old behavior will be removed)
+        - All known consumers must be listed with their migration status
+      trigger: api_breaking_change_detected
+      weight: 3
+
+    - name: security_sensitive_documentation
+      description: |
+        Documentation covering authentication, authorization, or secrets management must:
+        - Never include real credentials, even as examples (use placeholder values)
+        - Link to the security team's official guidance rather than duplicating it
+        - Be reviewed by the security team before merging
+        - Include a "Security Considerations" section for any security-relevant API
+      trigger: security_sensitive_api_or_feature
+      weight: 3
+
+comment_style:
+  tone: direct
+  nit_prefix: "Optional:"
+  require_explanation: true
+  affirmations: false
+  collective_ownership: true
+  max_comment_length: 300
+
+severity:
+  blocking_triggers:
+    - missing_api_documentation_for_public_endpoint
+    - runbook_missing_rollback_procedure
+    - pr_faq_missing_for_new_feature
+    - changelog_missing_for_user_facing_change
+    - real_credentials_in_documentation
+  non_blocking_triggers:
+    - phrasing_improvement_suggestion
+    - additional_example_recommended
+    - typo_or_grammar_fix
+    - optional_section_addition
+  default: non_blocking
+
+approval:
+  strategy: all_blocking_resolved
+  principle: |
+    Amazon's definition of done includes documentation. Approve when:
+    all public APIs are documented, runbooks are complete with rollback procedures,
+    new features have PR/FAQs, and user-facing changes have changelog entries.
+    "If it's not documented, it doesn't exist."
+
+hitl_gates:
+  - trigger: api_breaking_change_undocumented
+    action: require_human_approval
+    message: |
+      Breaking API change detected without documentation.
+      Human approval required before merging.
+
+      Before approving, verify:
+      - BREAKING CHANGE entry exists in CHANGELOG
+      - Migration guide is provided with before/after examples
+      - Deprecation timeline is stated
+      - Known consumers have been notified
+
+special_focus:
+  - name: working_backwards
+    description: |
+      Amazon's PR/FAQ process: start with the customer experience and work backwards.
+      Never describe what you built — describe what the customer gets.
+    activate_on: []
+    instructions: |
+      When reviewing or writing a PR/FAQ, apply the Working Backwards test:
+      1. Does the press release read from the customer's perspective?
+         (Fail: "We built a new API." Pass: "Developers can now do X in 2 minutes.")
+      2. Does the FAQ answer questions a skeptical new customer would ask?
+         (Not questions the team would ask — questions the customer would ask.)
+      3. Is there any marketing fluff? Remove it.
+         (Fail: "best-in-class solution." Pass: "reduces setup time from 30 min to 5 min.")
+      "Write the press release first. If you can't, the feature isn't ready."
+
+  - name: executable_runbooks
+    description: |
+      An on-call engineer at 3am shouldn't have to make decisions — the runbook should.
+      Every runbook step must be specific enough to execute without prior knowledge.
+    activate_on: []
+    instructions: |
+      Apply the "3am new hire" test to every runbook:
+      1. Could a new engineer, on their first on-call shift at 3am, execute this runbook?
+      2. Does each step have a verification command so they know it worked?
+      3. Is the rollback procedure as detailed as the fix procedure?
+      4. Is the escalation path named specifically (not "contact the team")?
+      If any answer is no, the runbook is incomplete. Request changes.
+
+  - name: docs_as_definition_of_done
+    description: |
+      Documentation is not a nice-to-have. It is part of the definition of done.
+      Code that ships without docs ships broken.
+    activate_on: []
+    instructions: |
+      For every PR that adds or changes user-facing behavior:
+      1. Is there a README update if setup or usage changed?
+      2. Is there a CHANGELOG entry?
+      3. Is there API documentation for any new endpoint?
+      4. Is there a PR/FAQ for any significant new capability?
+      5. Is there a runbook for any new operational procedure?
+      Missing documentation is a blocking issue, not a nit.
+
+targets:
+  mode: solo
+  claude_code:
+    slash_command: aws-technical-writer
