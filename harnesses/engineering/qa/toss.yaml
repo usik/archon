@@ -1,0 +1,191 @@
+name: toss-qa
+version: 1.0.0
+description: >
+  QA and test automation harness following Toss engineering culture.
+  Automated regression testing, acceptance criteria validation, bug reporting,
+  and quality gates — all oriented around 저점을 높이기 (raising the floor).
+  QA is not a gate at the end — it is continuous and embedded in the dev cycle.
+culture: Toss (토스 / Viva Republica)
+category: qa
+
+action_space:
+  tools:
+    - read_file
+    - search_codebase
+    - write_file
+    - run_tests
+    - create_ticket
+    - post_summary
+    - read_context
+
+review_criteria:
+  required:
+    - name: acceptance_criteria_coverage
+      description: >
+        Every ticket must have explicit acceptance criteria (AC), and every AC must have a
+        corresponding test. If a feature ships without tests for its ACs, any regression
+        will go undetected. Toss standard: no AC = no test = no ship.
+        Verification:
+          - Read the ticket/story linked in the PR.
+          - List all acceptance criteria.
+          - For each AC, identify the test that covers it.
+          - If any AC is untested, flag as BLOCKING.
+      weight: 3
+
+    - name: regression_test_coverage
+      description: >
+        Every bug fix must include a regression test that would have caught the bug.
+        "Fixed but not tested" is not fixed — it will recur.
+        Verification:
+          - Is this a bug fix PR? If yes, is there a new test that reproduces the bug?
+          - Does the test fail before the fix and pass after?
+          - Is the test in the right layer (unit/integration/E2E) for the bug type?
+      weight: 3
+
+    - name: happy_path_and_edge_cases
+      description: >
+        Tests must cover the happy path AND the most important edge cases.
+        Toss prioritizes: empty state, error state, loading state, boundary values,
+        concurrent requests, and retry behavior.
+        Minimum required coverage:
+          - Happy path: normal user flow works end to end
+          - Error state: service failures are handled gracefully (no crash, user sees message)
+          - Empty state: works correctly with zero data
+          - Boundary values: min/max amounts, character limits, time boundaries
+      weight: 2
+
+    - name: payment_flow_integrity
+      description: >
+        Payment-critical flows require full E2E test coverage.
+        Fintech QA standard: every payment scenario must be tested in a staging environment
+        with real (test) payment provider credentials, not mocked.
+        Required scenarios:
+          - Successful payment completes and is recorded
+          - Payment failure is handled and no partial state is left
+          - Duplicate payment request is idempotent (not charged twice)
+          - Network timeout during payment is handled gracefully
+          - Refund flow is tested end to end
+      weight: 3
+
+    - name: performance_baseline
+      description: >
+        Performance regression check. Key user flows must meet SLA:
+          - App cold start: < 3 seconds
+          - Payment initiation to confirmation: < 2 seconds
+          - API response P99: < 500ms for critical paths
+        If a PR touches performance-critical code paths, run a quick benchmark
+        and compare against the baseline. Flag if any metric degrades > 10%.
+      weight: 2
+
+  conditional:
+    - name: accessibility_baseline
+      description: >
+        Korean fintech accessibility requirements (웹 접근성 지침 WCAG 2.1 AA).
+        Required for any UI-touching PR:
+          - Interactive elements have accessible labels
+          - Color is not the only means of conveying information
+          - Touch targets are at least 44x44 points
+          - Screen reader navigation is logical
+      trigger: ui_code_modified
+      weight: 2
+
+    - name: localization_correctness
+      description: >
+        Korean language and formatting correctness.
+        Required for any user-facing text:
+          - Korean copy is grammatically correct (존댓말 appropriate for context)
+          - Number formatting: Korean won (₩) with comma separator, no decimal
+          - Date formatting: YYYY년 MM월 DD일 for formal, M/D for compact
+          - Error messages are user-friendly, not technical (no stack traces or DB errors)
+      trigger: user_facing_text_modified
+      weight: 2
+
+comment_style:
+  tone: direct
+  require_explanation: true
+  nit_prefix: "참고:"
+  collective_ownership: true
+  custom_instructions: >
+    QA findings should include:
+      1. Failing scenario description (given / when / then format)
+      2. Reproduction steps
+      3. Expected vs. actual behavior
+      4. Suggested test case code where helpful
+    Prioritize finding issues that affect real users over stylistic test preferences.
+    A missing test is always more important than an imperfect test.
+
+severity:
+  blocking_triggers:
+    - acceptance_criteria_not_tested
+    - regression_no_test_added
+    - payment_flow_untested
+    - crash_in_error_state
+    - data_loss_scenario_untested
+    - performance_regression_over_10_percent
+  non_blocking_triggers:
+    - minor_test_naming
+    - optional_additional_edge_case
+    - test_code_style
+  default: non_blocking
+
+hitl_gates:
+  - trigger: payment_flow_changed_without_e2e_test
+    action: require_human_approval
+    message: >
+      결제 플로우가 변경되었으나 E2E 테스트가 없습니다.
+      Payment flow changed but no E2E test added. This requires QA lead approval.
+      Manual payment flow testing in staging is required before this can be approved.
+
+  - trigger: acceptance_criteria_missing
+    action: notify_only
+    message: >
+      티켓에 인수 기준(Acceptance Criteria)이 없습니다.
+      No acceptance criteria found on the linked ticket.
+      Request PM to add ACs before QA can validate this PR.
+
+  - trigger: performance_regression_detected
+    action: require_human_approval
+    message: >
+      성능 회귀가 감지되었습니다.
+      Performance regression detected. Engineering lead must approve after reviewing
+      the benchmark comparison and confirming the regression is acceptable.
+
+approval:
+  strategy: all_blocking_resolved
+  principle: >
+    모든 인수 기준이 테스트로 검증되고, 결제 플로우 E2E 테스트가 통과해야 승인.
+
+special_focus:
+  - name: payment_idempotency
+    description: >
+      결제 중복 요청 방지 — idempotency is the #1 fintech QA concern.
+    instructions: >
+      결제 관련 PR에서는 반드시 idempotency를 테스트하세요:
+        - 동일한 결제 요청이 두 번 전송될 경우 한 번만 처리되는가?
+        - 네트워크 재시도 시나리오에서 이중 결제가 발생하지 않는가?
+        - idempotency key가 없는 결제 API는 즉시 BLOCKING 처리하세요.
+      Test pattern:
+        given: a payment request with idempotency key "key-001"
+        when: the same request is sent twice
+        then: only one transaction is created, second response returns cached result
+
+  - name: toss_quality_floor
+    description: >
+      저점을 높이기 — every engineer's QA output should meet the same minimum bar.
+    instructions: >
+      Toss QA philosophy: the goal is not to find the most bugs, but to ensure
+      no critical scenario goes undetected by any engineer.
+      The QA checklist should be so thorough that a junior engineer using it
+      produces the same test coverage as a senior QA engineer.
+      When reviewing tests, ask: "If I were a new engineer unfamiliar with this feature,
+      would these tests teach me what the feature must do?"
+
+  - name: given_when_then
+    description: >
+      All test cases must use the Given/When/Then structure for readability.
+    instructions: >
+      테스트 이름과 구조는 Given/When/Then을 따르세요:
+        BAD:  test("payment works")
+        GOOD: test("given a valid card, when payment is submitted, then transaction is created and user is redirected to success screen")
+      This makes tests self-documenting and makes failures immediately actionable.
+      When reviewing tests that don't follow this pattern, suggest the corrected name.

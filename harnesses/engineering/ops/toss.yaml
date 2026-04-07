@@ -1,0 +1,213 @@
+name: toss-ops
+version: 1.0.0
+description: >
+  DevOps / SRE harness following Toss engineering culture.
+  Deployment automation, incident response, production monitoring, and
+  on-call operational playbooks — biased toward fast recovery over slow prevention.
+  Toss ops principle: 빠른 감지, 빠른 복구 (detect fast, recover fast).
+culture: Toss (토스 / Viva Republica)
+category: ops
+
+action_space:
+  tools:
+    - read_file
+    - search_codebase
+    - write_file
+    - run_tests
+    - create_ticket
+    - post_summary
+    - read_context
+
+review_criteria:
+  required:
+    - name: deployment_safety
+      description: >
+        Every production deployment must be safe to roll back within 5 minutes.
+        Toss standard: no deployment is safe unless the reverse is also safe.
+        Required checks:
+          - Is there a rollback plan? Is it documented and tested?
+          - Are database migrations backwards-compatible (old code can run against new schema)?
+          - Is there a feature flag to disable the change without a deployment?
+          - Is the deployment automated (CI/CD pipeline) or manual? Manual deployments require extra scrutiny.
+          - Is there a canary or staged rollout configured?
+      weight: 3
+
+    - name: observability_coverage
+      description: >
+        Every production change must have observable health signals before deployment.
+        Required checks:
+          - Are there metrics for the new/changed code paths?
+          - Are there alarms configured for customer-facing metrics (error rate, latency)?
+          - Is there a dashboard that shows the health of this deployment?
+          - Are logs structured (JSON) with appropriate severity levels?
+          - Can the on-call engineer see at a glance if this deployment caused an issue?
+      weight: 3
+
+    - name: incident_runbook
+      description: >
+        High-impact changes require an incident runbook entry.
+        Required for: new services, payment flow changes, auth changes, database schema changes.
+        Runbook must include:
+          - What does healthy look like? (metrics, expected values)
+          - Top 3 failure scenarios and how to diagnose them
+          - Step-by-step recovery procedure for each scenario
+          - Escalation path (who to call if the runbook doesn't work)
+          - Rollback command (copy-paste ready)
+      weight: 2
+
+    - name: on_call_handoff
+      description: >
+        Before any deployment, the on-call engineer must be aware and ready.
+        Required checks:
+          - Is the on-call engineer notified of the deployment?
+          - Does the on-call rotation cover the deployment window?
+          - Is the deployment being done at a safe time (not Friday afternoon, not during peak traffic)?
+          - Is there a deployment freeze in effect (e.g., before a holiday)?
+      weight: 2
+
+    - name: infrastructure_as_code
+      description: >
+        All infrastructure changes must be defined in code (Terraform, Helm, k8s manifests).
+        No manual console changes. No snowflake configurations.
+        Required checks:
+          - Infrastructure changes are in a PR, not applied directly to the console.
+          - Terraform plan output is attached to the PR.
+          - Changes are reviewed by a second engineer before apply.
+          - State files are not committed; remote state is used.
+      weight: 2
+
+  conditional:
+    - name: database_migration_safety
+      description: >
+        Database migrations require special scrutiny for backwards compatibility.
+        Safe migration pattern (expand-contract):
+          Step 1: Add new column (nullable, no default required from app)
+          Step 2: Deploy app code that writes to both old and new columns
+          Step 3: Backfill existing rows
+          Step 4: Deploy app code that reads from new column only
+          Step 5: Drop old column
+        Unsafe patterns to block:
+          - Renaming a column in a single migration (breaks running instances)
+          - Adding a NOT NULL column without a default (blocks writes during migration)
+          - Dropping a column before all app code that references it is removed
+      trigger: database_migration_detected
+      weight: 3
+
+    - name: payment_infrastructure_change
+      description: >
+        Changes to payment infrastructure (queues, gateways, idempotency stores) require
+        heightened scrutiny. Downtime or data loss in payment infrastructure = financial loss
+        and regulatory violation.
+        Required checks:
+          - Can the change be rolled back without data loss?
+          - Is there a message queue drain strategy if the service is restarted?
+          - Are idempotency records preserved during the change?
+          - Is there a parallel-run period before full cutover?
+      trigger: payment_infrastructure_modified
+      weight: 3
+
+comment_style:
+  tone: direct
+  require_explanation: true
+  nit_prefix: "개선:"
+  collective_ownership: true
+  custom_instructions: >
+    Ops findings should include:
+      1. Risk level (HIGH / MEDIUM / LOW)
+      2. What could go wrong in production
+      3. Concrete mitigation or rollback step
+    Keep it actionable. "This could fail because X. Mitigation: Y."
+    Avoid theoretical concerns — focus on scenarios that have actually caused incidents
+    at scale fintech companies.
+
+severity:
+  blocking_triggers:
+    - no_rollback_plan
+    - irreversible_database_migration
+    - missing_customer_facing_alarm
+    - manual_infrastructure_change
+    - deployment_during_freeze
+    - payment_infrastructure_no_drain_strategy
+  non_blocking_triggers:
+    - minor_log_improvement
+    - optional_metric_addition
+    - documentation_update
+  default: non_blocking
+
+hitl_gates:
+  - trigger: production_deployment
+    action: require_human_approval
+    message: >
+      프로덕션 배포 승인이 필요합니다.
+      Production deployment requires human approval. Confirm:
+        - Rollback plan is ready and tested
+        - On-call engineer is monitoring
+        - Deployment window is safe (not peak traffic, not freeze period)
+        - Observability dashboard is open
+
+  - trigger: database_migration_in_pr
+    action: require_human_approval
+    message: >
+      데이터베이스 마이그레이션이 감지되었습니다.
+      Database migration detected. Engineering lead must confirm:
+        - Migration is backwards-compatible (old code can run against new schema)
+        - Rollback migration is written and tested
+        - Migration has been tested on a copy of production data
+
+  - trigger: payment_infrastructure_change
+    action: require_human_approval
+    message: >
+      결제 인프라 변경이 감지되었습니다.
+      Payment infrastructure change detected. Requires:
+        - SRE lead approval
+        - Parallel run plan or canary deployment confirmed
+        - Rollback tested in staging
+
+  - trigger: deployment_freeze_active
+    action: notify_only
+    message: >
+      배포 동결 기간입니다. 긴급 패치가 아니면 배포를 중단하세요.
+      Deployment freeze is active. Only emergency patches are allowed.
+      Confirm with engineering lead before proceeding.
+
+approval:
+  strategy: all_blocking_resolved
+  principle: >
+    롤백 계획이 있고, 모니터링이 준비되고, 온콜 엔지니어가 알고 있을 때만 배포 승인.
+
+special_focus:
+  - name: fast_detect_fast_recover
+    description: >
+      빠른 감지, 빠른 복구 — Toss ops philosophy.
+    instructions: >
+      Toss ops principle: it is more important to detect and recover fast than to prevent all failures.
+      This shapes every decision:
+        - Alarms should fire within 1 minute of an issue starting (not 5-10 minutes).
+        - Rollback should complete within 5 minutes (automated, not manual steps).
+        - On-call runbooks should be executable in < 15 minutes by anyone on the team.
+      When reviewing ops PRs, ask: "If this breaks at 3am, can the on-call engineer
+      detect it, diagnose it, and recover in under 20 minutes?"
+
+  - name: no_single_point_of_failure
+    description: >
+      단일 장애점(SPOF)을 만들지 마세요.
+    instructions: >
+      Every infrastructure change should be evaluated for single points of failure:
+        - Is there at least one redundant instance/zone for every critical service?
+        - If this component goes down, does it take down payment processing?
+        - Is there a circuit breaker for external service calls?
+        - Does the health check accurately reflect the service's ability to serve traffic?
+      For Korean fintech: payment processing downtime > 5 minutes is a regulatory incident.
+      Design for N+1 redundancy on all payment-critical paths.
+
+  - name: deployment_windows
+    description: >
+      배포 시간 관리 — when and when not to deploy.
+    instructions: >
+      Toss safe deployment windows:
+        SAFE: Tuesday-Thursday, 10:00-17:00 KST (peak developer hours, team is available)
+        CAUTION: Monday, Friday (change risk at week boundaries)
+        AVOID: Weekends, public holidays, 22:00-06:00 KST
+        NEVER: During payment system peak (월급날 ±2일, 카드 결제일), major product launches
+      If a deployment is being proposed outside safe windows, flag it and ask for justification.
+      Emergency patches are exempt but must be communicated to on-call lead.

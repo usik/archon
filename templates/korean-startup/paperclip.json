@@ -19,7 +19,7 @@
       "title": "Product Manager",
       "description": "제품 요구사항 정의, 티켓 생성, 우선순위 관리. Converts business goals into implementation-ready specs.",
       "runtime": "openharness",
-      "skill": null,
+      "skill": "toss-pm",
       "reports_to": "human",
       "budget": { "monthly_usd": 50 },
       "heartbeat": { "schedule": "0 9 * * 1-5", "description": "Daily morning standup — review backlog, create tickets for top priority items" }
@@ -71,7 +71,7 @@
       "title": "Security Engineer",
       "description": "보안 감사 및 PIPA 컴플라이언스. Scans PRs for security issues, enforces Korean privacy law requirements.",
       "runtime": "openharness",
-      "skill": null,
+      "skill": "korean-fintech-security",
       "reports_to": "architect",
       "budget": { "monthly_usd": 60 }
     },
@@ -81,7 +81,7 @@
       "title": "QA Engineer",
       "description": "테스트 자동화. Runs regression tests, files bug reports, validates feature acceptance criteria.",
       "runtime": "openharness",
-      "skill": null,
+      "skill": "toss-qa",
       "reports_to": "architect",
       "budget": { "monthly_usd": 60 }
     },
@@ -91,7 +91,7 @@
       "title": "DevOps / SRE",
       "description": "배포 및 모니터링. Handles deployments, monitors production, responds to incidents.",
       "runtime": "openharness",
-      "skill": null,
+      "skill": "toss-ops",
       "reports_to": "architect",
       "budget": { "monthly_usd": 80 }
     }
@@ -113,7 +113,7 @@
   },
   "_harnesmart": {
     "template_version": "1.0.0",
-    "required_harnesses": ["toss-feature-dev", "google-pr-review"],
+    "required_harnesses": ["toss-pm", "toss-feature-dev", "google-pr-review", "korean-fintech-security", "toss-qa", "toss-ops"],
     "install": "harness template install korean-startup"
   }
 }

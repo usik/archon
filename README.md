@@ -76,6 +76,12 @@ harness deploy-all --target openharness
 
 ## Harness Library
 
+### Product Management
+
+| Harness | Culture | Description |
+|---|---|---|
+| `toss-pm` | 🇰🇷 Toss | 고객 중심 — customer problem → AC → success metric → unblock engineering |
+
 ### Engineering / Feature Development
 
 | Harness | Culture | Description |
@@ -92,7 +98,25 @@ harness deploy-all --target openharness
 | `shopify-pr-review` | Shopify | One concern per PR, 200-300 LOC, collective ownership |
 | `stripe-pr-review` | Stripe | API contracts are permanent, float-for-money is blocking |
 
-**Coming soon**: `kakao-scale-review` · `naver-search-review` · `mercari-trust-safety` · `smarthr-compliance` · `japan-appi-compliance`
+### Engineering / Security
+
+| Harness | Culture | Description |
+|---|---|---|
+| `korean-fintech-security` | 🇰🇷 Korean Fintech | PIPA compliance + AppSec — PII, RRN, float-for-money, payment security |
+
+### Engineering / QA
+
+| Harness | Culture | Description |
+|---|---|---|
+| `toss-qa` | 🇰🇷 Toss | AC coverage, regression tests, payment idempotency, given/when/then |
+
+### Engineering / Ops
+
+| Harness | Culture | Description |
+|---|---|---|
+| `toss-ops` | 🇰🇷 Toss | 빠른 감지·복구 — deployment safety, ORR, incident runbook, deployment windows |
+
+**Coming soon**: `kakao-scale-review` · `naver-search-review` · `mercari-trust-safety` · `smarthr-compliance` · `japan-appi-compliance` · `toss-architect`
 
 ---
 

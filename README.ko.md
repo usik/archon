@@ -76,6 +76,12 @@ harness deploy-all --target openharness
 
 ## 하네스 라이브러리
 
+### 제품 관리
+
+| 하네스 | 문화 | 설명 |
+|---|---|---|
+| `toss-pm` | 🇰🇷 토스 | 고객 중심 — 고객 문제 → AC → 성공 지표 → 엔지니어링 언블로킹 |
+
 ### 엔지니어링 / 기능 개발
 
 | 하네스 | 문화 | 설명 |
@@ -92,7 +98,25 @@ harness deploy-all --target openharness
 | `shopify-pr-review` | Shopify | PR당 하나의 관심사, 200-300 LOC, 집단적 코드 소유권 |
 | `stripe-pr-review` | Stripe | API 계약은 영구적, float-for-money는 blocking |
 
-**출시 예정**: `kakao-scale-review` · `naver-search-review` · `mercari-trust-safety` · `smarthr-compliance` · `japan-appi-compliance`
+### 엔지니어링 / 보안
+
+| 하네스 | 문화 | 설명 |
+|---|---|---|
+| `korean-fintech-security` | 🇰🇷 한국 핀테크 | PIPA 컴플라이언스 + AppSec — 개인정보, 주민등록번호, 결제 보안 |
+
+### 엔지니어링 / QA
+
+| 하네스 | 문화 | 설명 |
+|---|---|---|
+| `toss-qa` | 🇰🇷 토스 | AC 커버리지, 회귀 테스트, 결제 멱등성, given/when/then |
+
+### 엔지니어링 / 운영
+
+| 하네스 | 문화 | 설명 |
+|---|---|---|
+| `toss-ops` | 🇰🇷 토스 | 빠른 감지·복구 — 배포 안전성, ORR, 인시던트 런북, 배포 윈도우 |
+
+**출시 예정**: `kakao-scale-review` · `naver-search-review` · `mercari-trust-safety` · `smarthr-compliance` · `japan-appi-compliance` · `toss-architect`
 
 ---
 

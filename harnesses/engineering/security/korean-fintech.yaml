@@ -1,0 +1,262 @@
+name: korean-fintech-security
+version: 1.0.0
+description: >
+  Security audit and PIPA (개인정보 보호법) compliance harness for Korean fintech.
+  Covers AppSec review, Korean privacy law requirements, FSC regulatory rules,
+  and fintech-specific vulnerability patterns (payment APIs, PII handling, auth flows).
+culture: Korean Fintech (토스 / 카카오페이 / 네이버페이 style)
+category: security
+
+action_space:
+  tools:
+    - read_diff
+    - read_file
+    - search_codebase
+    - post_inline
+    - post_summary
+    - request_changes
+    - create_ticket
+
+review_criteria:
+  required:
+    - name: pipa_compliance
+      description: >
+        개인정보 보호법 (PIPA) compliance check.
+        Any code that collects, stores, processes, or transmits personal information (개인정보)
+        must comply with PIPA. Personal information includes: name, phone number, address,
+        email, resident registration number (주민등록번호), financial account information,
+        location data, IP address (when combined with other identifiers), and biometric data.
+        Required checks:
+          - Is consent obtained before collecting personal information?
+          - Is the purpose of collection explicitly stated and limited?
+          - Is personal information encrypted at rest and in transit?
+          - Is there a retention policy and deletion mechanism?
+          - Is access to personal information logged and auditable?
+          - Are third-party data transfers disclosed and consented to?
+          - Is the minimum necessary data collected (최소 수집 원칙)?
+      weight: 3
+
+    - name: financial_data_protection
+      description: >
+        Korean FSC (금융위원회) and FSS (금융감독원) regulations for financial data.
+        Financial data requires stronger protection than general personal information.
+        Required checks:
+          - Account numbers, card numbers, and banking credentials must never be logged.
+          - Financial transactions must be traceable with audit logs.
+          - Payment amounts must use exact decimal arithmetic (BigDecimal, not float).
+          - Transaction idempotency keys must be used for all payment operations.
+          - Financial APIs must require strong authentication (OTP, biometric, or equivalent).
+          - Withdrawal and transfer operations require human-initiated triggers — no autonomous execution.
+      weight: 3
+
+    - name: authentication_and_authorization
+      description: >
+        Authentication and authorization security review.
+        Required checks:
+          - JWTs are validated on every request (not just at login).
+          - Token expiry is enforced; refresh tokens are rotated.
+          - Authorization checks are at the data layer, not just the API layer.
+          - There is no authorization logic in the frontend (all enforced server-side).
+          - Privilege escalation paths are blocked (users cannot elevate their own roles).
+          - Admin endpoints require separate strong authentication.
+          - Session invalidation works correctly on logout and password change.
+      weight: 3
+
+    - name: injection_and_xss
+      description: >
+        Injection and XSS vulnerability check (OWASP Top 10 A01-A03).
+        Required checks:
+          - All database queries use parameterized statements or ORMs with no raw string concatenation.
+          - All user-supplied data rendered in HTML is escaped.
+          - File upload endpoints validate file type (magic bytes, not just extension).
+          - Redirect URLs are validated against an allowlist.
+          - API responses do not reflect unsanitized user input.
+      weight: 3
+
+    - name: secret_and_credential_hygiene
+      description: >
+        Secret and credential hygiene check.
+        Required checks:
+          - No API keys, passwords, or tokens in source code or config files.
+          - No secrets in environment variable defaults.
+          - No PII in log statements (names, phone numbers, email, financial data).
+          - No sensitive data in error messages returned to clients.
+          - Private keys and certificates are not committed to the repository.
+      weight: 3
+
+    - name: pii_data_minimization
+      description: >
+        Data minimization principle (최소 수집 원칙) — only collect what is necessary.
+        Required checks:
+          - New PII fields in database schemas are justified against stated purpose.
+          - API responses do not return PII fields that the caller does not need.
+          - Analytics events do not include raw PII (use hashed identifiers instead).
+          - Logging does not capture full request/response bodies that may contain PII.
+      weight: 2
+
+    - name: dependency_vulnerabilities
+      description: >
+        Third-party dependency security check.
+        Required checks:
+          - New dependencies are checked for known CVEs.
+          - Dependency licenses are compatible with commercial use.
+          - Dependencies with access to sensitive data (auth, payments) are from reputable sources.
+          - Lock files are committed and up to date.
+      weight: 2
+
+  conditional:
+    - name: payment_api_security
+      description: >
+        Payment API-specific security checks (triggered when payment code is modified).
+        Required checks:
+          - Payment amounts cannot be set by the client — always computed server-side.
+          - Payment callbacks verify signatures from payment providers.
+          - Double-spend prevention is implemented (idempotency + distributed locking or DB constraints).
+          - Refund operations require the same authorization level as the original payment.
+          - Currency and amount types use BigDecimal or integer cents — never float.
+      trigger: payment_code_modified
+      weight: 3
+
+    - name: biometric_and_sensitive_auth
+      description: >
+        Biometric and sensitive authentication data (triggered for auth-related code).
+        Biometric data (지문, 얼굴인식) is sensitive personal information under PIPA Article 23.
+        Required checks:
+          - Biometric data is never stored raw — only processed on-device or hashed.
+          - Biometric authentication results are verified server-side, not just client-side.
+          - Fallback authentication mechanisms do not weaken overall security.
+      trigger: auth_code_modified
+      weight: 3
+
+    - name: resident_registration_number
+      description: >
+        주민등록번호 (Korean Resident Registration Number) handling.
+        RRN is the most sensitive category of Korean personal information.
+        Collection and storage of RRN is prohibited except for legally required cases
+        (PIPA Article 24-2). Even when legally permitted, storage requires explicit PIPC approval.
+        Required checks:
+          - RRN is never stored in the database without explicit legal basis and PIPC approval.
+          - RRN fields in any form are masked on display (앞 6자리 이후 * 처리).
+          - If RRN must be processed, it is hashed immediately after verification and not retained.
+      trigger: rrn_field_detected
+      weight: 3
+
+comment_style:
+  tone: direct
+  require_explanation: true
+  nit_prefix: "권고:"
+  collective_ownership: false
+  custom_instructions: >
+    Security findings must always include:
+      1. Severity (CRITICAL / HIGH / MEDIUM / LOW)
+      2. Regulatory reference (PIPA Article X / FSC Guideline / OWASP A0X)
+      3. Concrete remediation steps
+      4. Example of compliant code where helpful
+    Do not soften security findings with hedging language.
+    "This might be an issue" → "This IS an issue. Here is why and how to fix it."
+    For PIPA violations, always cite the specific article number.
+
+severity:
+  blocking_triggers:
+    - pipa_violation
+    - financial_data_unencrypted
+    - rrn_stored_without_legal_basis
+    - credentials_in_source_code
+    - sql_injection_risk
+    - authentication_bypass
+    - payment_amount_client_controlled
+    - pii_in_logs
+    - unauthorized_data_access
+  non_blocking_triggers:
+    - minor_logging_improvement
+    - optional_security_hardening
+    - dependency_minor_update_recommended
+  default: blocking
+
+hitl_gates:
+  - trigger: critical_vulnerability_found
+    action: flag_for_security_review
+    message: >
+      CRITICAL security vulnerability detected. 이 PR은 즉시 머지를 중단해야 합니다.
+      보안팀(AppSec)에 에스컬레이션하고, 해당 브랜치를 격리하세요.
+      Do not merge. Escalate to AppSec immediately.
+
+  - trigger: pipa_violation_found
+    action: require_human_approval
+    message: >
+      PIPA 위반 가능성이 발견되었습니다 (개인정보 보호법).
+      법무팀 또는 개인정보 보호 담당자의 검토가 필요합니다.
+      Possible PIPA violation found. Legal/DPO review required before merge.
+
+  - trigger: rrn_handling_detected
+    action: require_human_approval
+    message: >
+      주민등록번호 처리 코드가 감지되었습니다.
+      PIPA 제24조의2에 따라 주민등록번호 수집/저장은 법적 근거와 PIPC 승인이 필요합니다.
+      RRN handling code detected. Requires legal basis review and PIPC approval confirmation.
+
+  - trigger: payment_code_change
+    action: require_human_approval
+    message: >
+      결제 코드 변경이 감지되었습니다. 결제 보안 검토가 필요합니다.
+      Payment code change detected. Payment security review required.
+      Confirm: amounts are server-computed, idempotency keys are used, callbacks are verified.
+
+  - trigger: new_pii_field_added
+    action: notify_only
+    message: >
+      새로운 개인정보 필드가 추가되었습니다.
+      수집 목적, 보존 기간, 삭제 메커니즘이 명시되어 있는지 확인하세요.
+      New PII field added. Verify: collection purpose, retention policy, deletion mechanism.
+
+special_focus:
+  - name: pipa_article_24_2_rrn
+    description: >
+      주민등록번호 수집·이용·제공 금지 (PIPA Article 24-2).
+    instructions: >
+      주민등록번호(RRN, Resident Registration Number)는 PIPA 제24조의2에 의해
+      법적 근거 없이 수집·저장·처리가 금지된 최상위 민감 정보입니다.
+      모든 코드에서 RRN 패턴(\d{6}-[1-4]\d{6})을 스캔하세요.
+      RRN이 발견되면 즉시 HITL 게이트를 발동하고 법무팀 검토를 요청하세요.
+      허용되는 경우: 법률에 명시된 경우(금융실명법 등), PIPC 승인을 받은 경우.
+      허용되지 않는 경우: 단순 본인인증, 마케팅, 내부 식별자 대용.
+
+  - name: float_money_prohibition
+    description: >
+      Float/double types must never be used for monetary amounts in Korean fintech.
+    instructions: >
+      부동소수점(float, double) 타입을 금액 계산에 절대 사용하지 마세요.
+      Korean financial regulations and common fintech failures both mandate:
+        - Use BigDecimal (Java/Kotlin), Decimal (Python), or integer cents (JavaScript)
+        - Never: float price = 10.1 * 3; (결과: 30.299999...)
+        - Always: BigDecimal.valueOf(10.1).multiply(BigDecimal.valueOf(3))
+      금액 관련 필드의 타입이 float/double이면 BLOCKING으로 처리합니다.
+
+  - name: consent_and_purpose_limitation
+    description: >
+      PIPA 동의 및 목적 제한 원칙 (consent and purpose limitation).
+    instructions: >
+      개인정보를 처음 수집할 때 명시한 목적 이외로 사용할 수 없습니다 (PIPA Article 15-18).
+      코드 리뷰 시 확인 사항:
+        - 새로운 개인정보 활용 코드가 기존 수집 동의 범위 안에 있는가?
+        - 마케팅 목적으로 금융 거래 데이터를 활용하는 코드가 없는가?
+        - 제3자 API로 개인정보를 전송하는 코드는 동의를 받았는가?
+      의심스러운 경우: 개인정보 처리방침과 수집 동의서를 확인하고 법무팀에 문의하세요.
+
+  - name: audit_trail_requirements
+    description: >
+      금융 거래 및 개인정보 접근에 대한 감사 로그 요건.
+    instructions: >
+      Korean financial regulations require audit trails for:
+        - All financial transactions (who initiated, amount, timestamp, result)
+        - All access to personal information (who accessed, when, what data)
+        - All admin operations (configuration changes, role changes)
+      감사 로그는 삭제하거나 수정할 수 없어야 하며, 최소 5년 보관이 원칙입니다.
+      새로운 금융 API나 PII 접근 코드에 감사 로그가 없으면 BLOCKING입니다.
+
+approval:
+  strategy: all_blocking_resolved
+  principle: >
+    모든 보안 이슈와 PIPA 위반 사항이 해결되어야 승인합니다.
+    CRITICAL/HIGH 취약점이 하나라도 있으면 머지 불가.
+    보안팀 최종 확인 후 승인.

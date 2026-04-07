@@ -21,14 +21,14 @@ agents:
   - id: pm
     role: Product Manager
     description: 제품 요구사항 정의, 티켓 생성, 우선순위 관리
-    harness: null  # coming soon: toss-product-manager
+    harness: toss-pm
     reports_to: human
     budget_monthly_usd: 50
 
   - id: architect
     role: Software Architect
     description: 시스템 설계, 기술 결정, 아키텍처 검토
-    harness: null  # coming soon: toss-system-design
+    harness: null  # coming soon: toss-architect (aws-feature-dev used for design reviews)
     reports_to: pm
     budget_monthly_usd: 80
 
@@ -56,21 +56,21 @@ agents:
   - id: security
     role: Security Engineer
     description: 보안 감사, PIPA 컴플라이언스, 취약점 스캔
-    harness: null  # coming soon: korean-fintech-appsec
+    harness: korean-fintech-security
     reports_to: architect
     budget_monthly_usd: 60
 
   - id: qa
     role: QA Engineer
     description: 테스트 자동화, 버그 리포트, 회귀 테스트
-    harness: null  # coming soon: toss-qa
+    harness: toss-qa
     reports_to: architect
     budget_monthly_usd: 60
 
   - id: ops
     role: DevOps / SRE
     description: 배포, 모니터링, 인시던트 대응
-    harness: null  # coming soon: toss-incident
+    harness: toss-ops
     reports_to: architect
     budget_monthly_usd: 80
 
