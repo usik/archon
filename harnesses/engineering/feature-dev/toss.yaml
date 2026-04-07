@@ -342,3 +342,10 @@ special_focus:
 
       If any answer is no, iterate before opening the PR.
       "저점을 높이기 — 이 하네스는 모든 엔지니어가 최고 엔지니어와 같은 결과물을 낼 수 있도록 설계되었습니다."
+
+targets:
+  mode: team
+  claude_code:
+    slash_command: toss-feature-dev
+  openharness:
+    skill_path: toss-feature-dev

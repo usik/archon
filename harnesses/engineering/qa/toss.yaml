@@ -190,3 +190,10 @@ special_focus:
         GOOD: test("given a valid card, when payment is submitted, then transaction is created and user is redirected to success screen")
       This makes tests self-documenting and makes failures immediately actionable.
       When reviewing tests that don't follow this pattern, suggest the corrected name.
+
+targets:
+  mode: team
+  claude_code:
+    slash_command: toss-qa
+  openharness:
+    skill_path: toss-qa

@@ -192,3 +192,10 @@ special_focus:
         - If no KR is linked, is this maintenance work or a one-off request?
       Tickets not linked to an OKR should be flagged for backlog review —
       they may be low-priority or misaligned with current goals.
+
+targets:
+  mode: team
+  claude_code:
+    slash_command: toss-pm
+  openharness:
+    skill_path: toss-pm

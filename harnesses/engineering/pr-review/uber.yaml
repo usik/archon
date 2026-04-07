@@ -220,3 +220,8 @@ special_focus:
       Review reliability patterns: timeout configurations, retry logic with
       backoff, circuit breakers, graceful degradation. Uber operates at massive
       scale — missing timeouts or retries can cascade into outages.
+
+targets:
+  mode: solo
+  claude_code:
+    slash_command: uber-pr-review

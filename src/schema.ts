@@ -126,6 +126,65 @@ export const HitlGate = z.object({
   message: z.string(),
 });
 
+// ─── Deployment mode ──────────────────────────────────────────────────────────
+//
+//  solo     — Claude Code (subscription). Single-agent, interactive, no persistent state.
+//  team     — OpenHarness (API key). Headless, agentic loops, stateful, handoffs.
+//  company  — Paperclip + OpenHarness. Multi-agent org chart, budgets, governance.
+//
+//  Modes are inclusive upward: a solo harness runs anywhere.
+//  A team harness needs OpenHarness or Claude Code in agent mode.
+//  A company harness needs Paperclip to orchestrate.
+
+export const HarnessMode = z.enum(["solo", "team", "company"]);
+export type HarnessMode = z.infer<typeof HarnessMode>;
+
+export const HarnessTargets = z.object({
+  /** Minimum runtime required to run this harness */
+  mode: HarnessMode,
+
+  // Solo-specific
+  claude_code: z.object({
+    /** Slash command users type in Claude Code. Defaults to /<harness.name> */
+    slash_command: z.string().optional(),
+  }).optional(),
+
+  // Team-specific
+  openharness: z.object({
+    /** Skill name under ~/.openharness/skills/ */
+    skill_path: z.string().optional(),
+  }).optional(),
+
+  // Company-specific
+  paperclip: z.object({
+    /** Agent slot in the org chart this harness fills */
+    role_id: z.string().optional(),
+    /** Mirrors manifest.yaml reports_to — makes harness self-describing */
+    reports_to: z.string().optional(),
+    budget_monthly_usd: z.number().optional(),
+  }).optional(),
+});
+export type HarnessTargets = z.infer<typeof HarnessTargets>;
+
+// ─── Mode inference ───────────────────────────────────────────────────────────
+// Deterministically infer mode from harness structure when targets.mode is absent.
+
+export function inferMode(harness: {
+  loop?: { style?: string };
+  handoffs?: unknown[];
+  memory?: { persist_after_task?: unknown[] };
+  hitl_gates?: Array<{ action: string }>;
+  targets?: { mode?: string; paperclip?: { reports_to?: string; role_id?: string } };
+}): HarnessMode {
+  if (harness.targets?.paperclip?.reports_to || harness.targets?.paperclip?.role_id) return "company";
+  if (harness.loop?.style === "agentic") return "team";
+  if ((harness.handoffs?.length ?? 0) > 0) return "team";
+  if ((harness.memory?.persist_after_task?.length ?? 0) > 0) return "team";
+  const teamGates = ["notify_only", "flag_for_security_review", "flag_for_domain_expert"];
+  if (harness.hitl_gates?.some(g => teamGates.includes(g.action))) return "team";
+  return "solo";
+}
+
 // ─── Agent loop model ─────────────────────────────────────────────────────────
 // Defines the execution pattern: linear (review) vs. agentic (iterative dev).
 
@@ -240,6 +299,10 @@ export const HarnessSchema = z.object({
   severity: SeveritySystem,
   approval: ApprovalPolicy,
   size: SizePolicy.optional(),
+
+  // ── Deployment targets ────────────────────────────────────────────────────
+  /** Minimum runtime required and per-runtime configuration */
+  targets: HarnessTargets.optional(),
 
   // ── Agent runtime hints (borrowed from OpenHarness model) ──────────────────
   /** Execution loop model: linear review vs. agentic iteration */

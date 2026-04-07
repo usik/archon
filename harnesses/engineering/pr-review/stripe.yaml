@@ -243,3 +243,8 @@ special_focus:
       2. Is it naturally idempotent (e.g., setting a value to X)?
       3. Are duplicate requests handled explicitly?
       Missing idempotency on payment operations is a BLOCKING issue.
+
+targets:
+  mode: solo
+  claude_code:
+    slash_command: stripe-pr-review

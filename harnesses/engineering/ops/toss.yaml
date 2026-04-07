@@ -212,3 +212,10 @@ special_focus:
         NEVER: During payment system peak (월급날 ±2일, 카드 결제일), major product launches
       If a deployment is being proposed outside safe windows, flag it and ask for justification.
       Emergency patches are exempt but must be communicated to on-call lead.
+
+targets:
+  mode: team
+  claude_code:
+    slash_command: toss-ops
+  openharness:
+    skill_path: toss-ops

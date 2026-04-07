@@ -307,3 +307,10 @@ approval:
     모든 보안 이슈와 PIPA 위반 사항이 해결되어야 승인합니다.
     CRITICAL/HIGH 취약점이 하나라도 있으면 머지 불가.
     보안팀 최종 확인 후 승인.
+
+targets:
+  mode: team
+  claude_code:
+    slash_command: korean-fintech-security
+  openharness:
+    skill_path: korean-fintech-security

@@ -485,3 +485,10 @@ size:
     2. Feature implementation PR
     3. Test PR (if tests significantly add to size)
     Atomic PRs are easier to roll back and easier to reason about in post-incident reviews.
+
+targets:
+  mode: team
+  claude_code:
+    slash_command: aws-feature-dev
+  openharness:
+    skill_path: aws-feature-dev

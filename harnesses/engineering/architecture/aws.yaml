@@ -467,3 +467,10 @@ special_focus:
 
         FLOAT FOR MONEY: Using float/double for monetary amounts. This is always wrong.
         Use integer cents, BigDecimal, or a Money type.
+
+targets:
+  mode: team
+  claude_code:
+    slash_command: aws-architect
+  openharness:
+    skill_path: aws-architect

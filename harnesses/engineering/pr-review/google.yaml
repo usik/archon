@@ -181,3 +181,8 @@ special_focus:
     instructions: |
       Review concurrent operations carefully. Check for: proper synchronization,
       absence of data races, correct use of locks, potential deadlocks.
+
+targets:
+  mode: solo
+  claude_code:
+    slash_command: google-pr-review

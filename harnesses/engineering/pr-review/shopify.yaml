@@ -217,3 +217,8 @@ special_focus:
       Explicit curiosity over implicit criticism. Recognize that communication
       styles differ across cultures — be especially clear about what is blocking
       vs. optional.
+
+targets:
+  mode: solo
+  claude_code:
+    slash_command: shopify-pr-review
