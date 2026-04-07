@@ -212,3 +212,19 @@ comment_style:
 ## Early Access
 
 → [usik.github.io/archon](https://usik.github.io/archon)
+
+---
+
+## Acknowledgements
+
+Archon is built on the shoulders of two outstanding open-source projects:
+
+**[OpenHarness](https://github.com/HKUDS/OpenHarness)** — the agent execution engine that powers Archon's runtime layer. OpenHarness provides the core agent loop, 43+ tools, multi-agent coordination, memory, and skill loading. We are deeply grateful to the HKUDS team for building and open-sourcing this work under the MIT license.
+
+**[Paperclip](https://github.com/paperclipai/paperclip)** — the multi-agent orchestration platform that powers Archon's UI and governance layer. Paperclip's org chart model, budget controls, and task management system are the foundation of Archon's company-tier features. Thank you to the Paperclip team for their remarkable work, also released under the MIT license.
+
+The harness definition layer, OAKP model, CLI, and harness library in this repository are original work built on top of concepts inspired by both projects.
+
+We encourage everyone to star and contribute to both upstream projects:
+- ⭐ [github.com/HKUDS/OpenHarness](https://github.com/HKUDS/OpenHarness)
+- ⭐ [github.com/paperclipai/paperclip](https://github.com/paperclipai/paperclip)
