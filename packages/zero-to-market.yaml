@@ -1,0 +1,84 @@
+# Zero to Market — Default Package
+# Full 14-agent team from idea to paying customer.
+# Uses best-in-class harnesses across engineering, data, and business roles.
+# Culture-agnostic defaults. Swap individual harnesses for culture-specific variants.
+
+name: zero-to-market
+version: 1.0.0
+description: |
+  The complete agent team for taking a product from zero to market.
+  14 agents covering every role from PM to customer service.
+  One package. One command. Full team.
+
+agents:
+  - role: pm
+    harness: toss-pm
+    description: Converts business problems into actionable requirements and acceptance criteria
+
+  - role: architect
+    harness: aws-architect
+    description: System design, ADRs, and technical decision-making
+
+  - role: frontend-dev
+    harness: toss-frontend-dev
+    description: UI implementation with performance, accessibility, and PIPA-compliant forms
+
+  - role: backend-dev
+    harness: toss-feature-dev
+    description: API and business logic implementation following Toss engineering culture
+
+  - role: security
+    harness: korean-fintech-security
+    description: Security audit and compliance review
+
+  - role: qa
+    harness: toss-qa
+    description: Test coverage, AC validation, and quality assurance
+
+  - role: devops
+    harness: toss-ops
+    description: Deployment, infrastructure, and production monitoring
+
+  - role: pr-reviewer
+    harness: google-pr-review
+    description: Code review before merge
+
+  - role: data-engineer
+    harness: aws-data-engineer
+    description: Schema design, migrations, and data pipelines
+
+  - role: technical-writer
+    harness: aws-technical-writer
+    description: Docs, API reference, runbooks, and PR/FAQs
+
+  - role: gtm-strategist
+    harness: toss-gtm-strategist
+    description: Go-to-market strategy, channel selection, and launch planning
+
+  - role: marketer
+    harness: toss-marketer
+    description: Content, campaigns, SEO, and growth marketing
+
+  - role: sales
+    harness: toss-sales
+    description: Outreach, proposals, and deal management
+
+  - role: customer-service
+    harness: toss-customer-service
+    description: Customer support, issue resolution, and product feedback loop
+
+handoff_order:
+  - pm → architect
+  - architect → backend-dev
+  - architect → frontend-dev
+  - architect → data-engineer
+  - backend-dev → pr-reviewer
+  - frontend-dev → pr-reviewer
+  - pr-reviewer → security
+  - security → qa
+  - qa → devops
+  - devops → technical-writer
+  - pm → gtm-strategist
+  - gtm-strategist → marketer
+  - marketer → sales
+  - sales → customer-service

@@ -1,0 +1,84 @@
+# Zero to Market — US / Global Edition
+# Full 14-agent team tuned for US and global markets.
+# AWS engineering culture + Stripe API standards + Google PR review.
+# Optimized for US startups, SaaS, and global product launches.
+
+name: zero-to-market-us
+version: 1.0.0
+description: |
+  The complete agent team for US and global markets.
+  AWS Working Backwards culture + Stripe API permanence + Google engineering practices.
+  Move fast with strong foundations — Working Backwards before any code, ORR before any deploy.
+
+agents:
+  - role: pm
+    harness: toss-pm
+    description: Customer problem → PR/FAQ → requirements → AC. Working Backwards from the customer.
+
+  - role: architect
+    harness: aws-architect
+    description: Well-Architected Framework, 6-pager design docs, Type 1/2 decisions
+
+  - role: frontend-dev
+    harness: toss-frontend-dev
+    description: Performance-first, WCAG 2.1 AA accessibility, Core Web Vitals budget
+
+  - role: backend-dev
+    harness: aws-feature-dev
+    description: Working Backwards → 6-pager → ORR → gradual deploy with deployment rings
+
+  - role: security
+    harness: google-pr-review
+    description: Security review following Google Engineering Practices
+
+  - role: qa
+    harness: toss-qa
+    description: AC-driven testing, boundary values, idempotency under retry
+
+  - role: devops
+    harness: toss-ops
+    description: ORR gates, gradual deployment rings, runbooks, rollback procedures
+
+  - role: pr-reviewer
+    harness: stripe-pr-review
+    description: Stripe-style PR review — API permanence, backward compatibility, idempotency
+
+  - role: data-engineer
+    harness: aws-data-engineer
+    description: Schema as contract, zero-downtime migrations, data quality SLAs
+
+  - role: technical-writer
+    harness: aws-technical-writer
+    description: PR/FAQ, API docs, runbooks — Amazon writing culture
+
+  - role: gtm-strategist
+    harness: toss-gtm-strategist
+    description: Beachhead segment, North Star metric, channel-market fit, phased launch
+
+  - role: marketer
+    harness: toss-marketer
+    description: Truth-based marketing, content-market fit, measurable campaigns
+
+  - role: sales
+    harness: toss-sales
+    description: Value-proof sales, ROI-driven proposals, stakeholder mapping
+
+  - role: customer-service
+    harness: toss-customer-service
+    description: Resolution-complete CS, root cause escalation, product feedback loop
+
+handoff_order:
+  - pm → architect
+  - architect → backend-dev
+  - architect → frontend-dev
+  - architect → data-engineer
+  - backend-dev → pr-reviewer
+  - frontend-dev → pr-reviewer
+  - pr-reviewer → security
+  - security → qa
+  - qa → devops
+  - devops → technical-writer
+  - pm → gtm-strategist
+  - gtm-strategist → marketer
+  - marketer → sales
+  - sales → customer-service

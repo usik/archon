@@ -1,0 +1,85 @@
+# Zero to Market — Japanese Edition
+# Full 14-agent team tuned for Japanese market.
+# Mercari engineering culture + APPI compliance + Japanese GTM strategy.
+# Optimized for Japanese enterprise, marketplace, and B2B SaaS.
+
+name: zero-to-market-jp
+version: 1.0.0
+description: |
+  The complete agent team for the Japanese market.
+  Mercari engineering culture — Go Bold, All for One, Be a Pro, Move Fast.
+  APPI (個人情報保護法) and J-SOX compliance built in.
+  Japanese GTM — nemawashi, ringi, relationship-first sales, omotenashi CS.
+
+agents:
+  - role: pm
+    harness: toss-pm
+    description: Customer problem → requirements → AC. Adapted for Japanese consensus-driven process.
+
+  - role: architect
+    harness: aws-architect
+    description: Well-Architected + data residency in Japan + J-SOX IT governance requirements
+
+  - role: frontend-dev
+    harness: toss-frontend-dev
+    description: APPI-compliant forms, Japanese accessibility standards (JIS X 8341), mobile-first
+
+  - role: backend-dev
+    harness: mercari-feature-dev
+    description: メルカリスタイル — Go Bold, blameless culture, feature flags, small PRs
+
+  - role: security
+    harness: japanese-enterprise-security
+    description: APPI · My Number · J-SOX · FSA · cross-border data transfer compliance
+
+  - role: qa
+    harness: toss-qa
+    description: Quality-first QA — Japanese market demands near-zero defect tolerance
+
+  - role: devops
+    harness: toss-ops
+    description: Conservative deployment rings, detailed runbooks, 7-year audit log retention
+
+  - role: pr-reviewer
+    harness: google-pr-review
+    description: Collaborative code review — knowledge sharing, not gatekeeping
+
+  - role: data-engineer
+    harness: aws-data-engineer
+    description: Schema safety, data residency enforcement, APPI PII pipeline compliance
+
+  - role: technical-writer
+    harness: aws-technical-writer
+    description: Detailed design docs (Japanese enterprise expects thorough documentation)
+
+  - role: gtm-strategist
+    harness: toss-gtm-strategist
+    description: Japanese GTM — nemawashi groundwork, ringi approval process, LINE/Yahoo Japan channels
+
+  - role: marketer
+    harness: toss-marketer
+    description: Trust-based content marketing, LINE Official Account, Japanese SEO
+
+  - role: sales
+    harness: toss-sales
+    description: Relationship-first Japanese enterprise sales — long-term commitment over quick wins
+
+  - role: customer-service
+    harness: toss-customer-service
+    description: Omotenashi — anticipate needs before expressed, meticulous attention to detail
+
+handoff_order:
+  - pm → architect
+  - architect → backend-dev
+  - architect → frontend-dev
+  - architect → data-engineer
+  - backend-dev → pr-reviewer
+  - frontend-dev → pr-reviewer
+  - pr-reviewer → security
+  - security → qa
+  - qa → devops
+  - devops → technical-writer
+  - pm → gtm-strategist
+  - gtm-strategist → marketer
+  - marketer → sales
+  - sales → customer-service

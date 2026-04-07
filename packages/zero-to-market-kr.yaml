@@ -1,0 +1,85 @@
+# Zero to Market — Korean Edition
+# Full 14-agent team tuned for Korean market.
+# Toss engineering culture + PIPA compliance + Korean GTM strategy.
+# Optimized for Korean fintech, super-app, and B2C startups.
+
+name: zero-to-market-kr
+version: 1.0.0
+description: |
+  The complete agent team for the Korean market.
+  Toss engineering culture across all roles.
+  PIPA (개인정보 보호법) compliance built into every agent.
+  Korean GTM — KakaoTalk, Naver, FSC/FSS regulatory awareness.
+
+agents:
+  - role: pm
+    harness: toss-pm
+    description: 토스 스타일 PM — 고객 문제를 AC와 성공 지표로 전환
+
+  - role: architect
+    harness: aws-architect
+    description: Well-Architected + Type 1/2 decisions, Korean cloud (Kakao Cloud, Naver Cloud) awareness
+
+  - role: frontend-dev
+    harness: toss-frontend-dev
+    description: 토스 디자인 시스템, PIPA 폼 처리, Core Web Vitals
+
+  - role: backend-dev
+    harness: toss-feature-dev
+    description: 저점을 높이기 — 모든 엔지니어가 최고 엔지니어처럼 개발
+
+  - role: security
+    harness: korean-fintech-security
+    description: PIPA · FSC · FSS · 주민등록번호 처리 · 결제 보안
+
+  - role: qa
+    harness: toss-qa
+    description: 토스 QA — AC 커버리지, 결제 멱등성, 경계값 테스트
+
+  - role: devops
+    harness: toss-ops
+    description: 토스 SRE — 배포 링, DB 마이그레이션 안전성, 빠른 감지·복구
+
+  - role: pr-reviewer
+    harness: google-pr-review
+    description: 구글 엔지니어링 프랙티스 기반 PR 리뷰
+
+  - role: data-engineer
+    harness: aws-data-engineer
+    description: 스키마 안전성, 파이프라인 멱등성, PIPA PII 처리
+
+  - role: technical-writer
+    harness: aws-technical-writer
+    description: PR/FAQ, API 문서, 운영 런북
+
+  - role: gtm-strategist
+    harness: toss-gtm-strategist
+    description: 한국 시장 GTM — KakaoTalk, Naver, 카드사 제휴, FSC 인허가
+
+  - role: marketer
+    harness: toss-marketer
+    description: 콘텐츠, 네이버 SEO, 카카오 채널, 바이럴 마케팅
+
+  - role: sales
+    harness: toss-sales
+    description: 한국 B2B 영업 — 신뢰 기반, 데이터 증거, 이해관계자 맵핑
+
+  - role: customer-service
+    harness: toss-customer-service
+    description: 빠른 응답, 완전한 해결, 제품 피드백 루프
+
+handoff_order:
+  - pm → architect
+  - architect → backend-dev
+  - architect → frontend-dev
+  - architect → data-engineer
+  - backend-dev → pr-reviewer
+  - frontend-dev → pr-reviewer
+  - pr-reviewer → security
+  - security → qa
+  - qa → devops
+  - devops → technical-writer
+  - pm → gtm-strategist
+  - gtm-strategist → marketer
+  - marketer → sales
+  - sales → customer-service
