@@ -34,6 +34,66 @@ export function compile(harness: Harness): string {
   }
   lines.push("");
 
+  // ── Provider hint ────────────────────────────────────────────────────────
+  if (harness.provider_hint) {
+    const tierLabels: Record<string, string> = {
+      high_reasoning: "🧠 High Reasoning (Opus / o1-class — complex decisions, architecture, security)",
+      balanced:       "⚖️  Balanced (Sonnet-class — standard development and review tasks)",
+      fast:           "⚡ Fast (Haiku / mini-class — simple, repetitive, high-volume tasks)",
+    };
+    lines.push(`> **Model tier**: ${tierLabels[harness.provider_hint.tier] ?? harness.provider_hint.tier}`);
+    if (harness.provider_hint.reason) {
+      lines.push(`> ${harness.provider_hint.reason}`);
+    }
+    lines.push("");
+  }
+
+  // ── Memory seeds ──────────────────────────────────────────────────────────
+  if (harness.memory && (harness.memory.always_read.length > 0 || harness.memory.context_patterns.length > 0)) {
+    lines.push("## Memory Seeds");
+    lines.push("");
+    lines.push("Load this context **before** any observation or action. This is what you know going in.");
+    lines.push("");
+    if (harness.memory.always_read.length > 0) {
+      lines.push("**Always read at task start:**");
+      for (const f of harness.memory.always_read) lines.push(`- \`${f}\``);
+      lines.push("");
+    }
+    if (harness.memory.context_patterns.length > 0) {
+      lines.push("**Search for context matching:**");
+      for (const p of harness.memory.context_patterns) lines.push(`- \`${p}\``);
+      lines.push("");
+    }
+    if (harness.memory.persist_after_task.length > 0) {
+      lines.push("**Persist after task completion:**");
+      for (const p of harness.memory.persist_after_task) lines.push(`- ${p}`);
+      lines.push("");
+    }
+  }
+
+  // ── Agent loop model ──────────────────────────────────────────────────────
+  if (harness.loop) {
+    lines.push("## Execution Loop");
+    lines.push("");
+    const styleDesc: Record<string, string> = {
+      linear:  "**Linear** — read inputs → analyze → produce output once. Do not loop.",
+      agentic: "**Agentic** — plan → act → observe → reflect → repeat until done or stuck.",
+    };
+    lines.push(styleDesc[harness.loop.style] ?? harness.loop.style);
+    lines.push("");
+    if (harness.loop.style === "agentic") {
+      lines.push(`- Max iterations before stopping: **${harness.loop.max_iterations}**`);
+      if (harness.loop.think_before_act) {
+        lines.push("- **Think before acting**: Write out your reasoning before every tool call.");
+      }
+      if (harness.loop.reflect_after_act) {
+        lines.push("- **Reflect after acting**: After each tool result, assess: did the action achieve the goal? Adjust plan.");
+      }
+      lines.push(`- When stuck: **${harness.loop.on_stuck.replace(/_/g, " ")}**`);
+    }
+    lines.push("");
+  }
+
   // ── OAKP: Observation + Action Space ─────────────────────────────────────
   const observationDescriptions: Record<string, string> = {
     read_diff:       "**read_diff** — Read the full PR diff",
@@ -313,6 +373,48 @@ rather than "this is wrong." Authors should feel energized after reading your re
       }
       lines.push("");
       lines.push(focus.instructions.trim());
+      lines.push("");
+    }
+  }
+
+  // ── Grounding rules ───────────────────────────────────────────────────────
+  if (harness.grounding.length > 0) {
+    lines.push("## Grounding Rules");
+    lines.push("");
+    lines.push(
+      "You must satisfy these evidence requirements **before** calling the listed action tool. " +
+      "If the evidence is not present in your observations, gather it first."
+    );
+    lines.push("");
+    for (const rule of harness.grounding) {
+      lines.push(`### Before \`${rule.applies_to}\` — ${rule.name}`);
+      lines.push("");
+      lines.push(rule.require.trim());
+      lines.push("");
+    }
+  }
+
+  // ── Handoff formats ───────────────────────────────────────────────────────
+  if (harness.handoffs.length > 0) {
+    lines.push("## Handoff Format");
+    lines.push("");
+    lines.push(
+      "When passing work to the next agent, structure your output using these formats. " +
+      "Downstream agents depend on this structure to proceed without ambiguity."
+    );
+    lines.push("");
+    for (const handoff of harness.handoffs) {
+      lines.push(`### To: ${handoff.to_role}`);
+      lines.push("");
+      lines.push(handoff.description.trim());
+      lines.push("");
+      lines.push("**Required sections:**");
+      for (const section of handoff.output_sections) lines.push(`- ${section}`);
+      if (handoff.required_fields.length > 0) {
+        lines.push("");
+        lines.push("**Must include these fields** (handoff is invalid without them):");
+        for (const field of handoff.required_fields) lines.push(`- \`${field}\``);
+      }
       lines.push("");
     }
   }

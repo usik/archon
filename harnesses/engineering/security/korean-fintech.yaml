@@ -18,6 +18,52 @@ action_space:
   - request_changes
   - create_ticket
 
+provider_hint:
+  tier: high_reasoning
+  reason: >
+    Security and PIPA compliance findings have legal and financial consequences.
+    False negatives are more dangerous than false positives. Use maximum reasoning capacity.
+
+loop:
+  style: linear
+  max_iterations: 3
+  think_before_act: true
+  reflect_after_act: false
+  on_stuck: escalate_to_human
+
+memory:
+  always_read:
+    - docs/security/threat-model.md
+    - docs/compliance/pipa-checklist.md
+    - AGENTS.md
+  context_patterns:
+    - "privacy-policy*.md"
+    - "security*.md"
+    - "compliance*.md"
+  persist_after_task:
+    - CRITICAL/HIGH findings and their resolution status
+    - New PIPA-relevant patterns found in codebase
+    - Security review outcomes for payment code changes
+
+grounding:
+  - name: cite-file-and-line-for-every-finding
+    applies_to: post_inline
+    require: >
+      Before posting any security finding:
+        1. You have read the specific file and identified the exact line(s)
+        2. You can cite the PIPA article or OWASP category that applies
+        3. You have a concrete remediation suggestion, not just "fix this"
+      Do not post vague security comments. Every finding must be specific and actionable.
+
+  - name: critical-finding-escalated-before-summary
+    applies_to: post_summary
+    require: >
+      Before posting the final security summary:
+        1. Any CRITICAL findings have already triggered the appropriate HITL gate
+        2. PIPA violations have been flagged for legal/DPO review
+        3. All findings are classified with severity (CRITICAL/HIGH/MEDIUM/LOW)
+      Do not post a summary that downplays CRITICAL findings.
+
 review_criteria:
   required:
     - name: pipa_compliance

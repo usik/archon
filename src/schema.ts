@@ -126,6 +126,82 @@ export const HitlGate = z.object({
   message: z.string(),
 });
 
+// ─── Agent loop model ─────────────────────────────────────────────────────────
+// Defines the execution pattern: linear (review) vs. agentic (iterative dev).
+
+export const LoopStyle = z.enum([
+  "linear",   // read → analyze → output once (PR review, security audit)
+  "agentic",  // plan → act → observe → reflect → repeat (feature dev, ops)
+]);
+
+export const AgentLoop = z.object({
+  /** Execution pattern */
+  style: LoopStyle,
+  /** Max tool-call cycles before stopping and asking for human input */
+  max_iterations: z.number().default(10),
+  /** Require explicit reasoning before any action tool call */
+  think_before_act: z.boolean().default(false),
+  /** After each action, observe the result and adjust plan before next action */
+  reflect_after_act: z.boolean().default(false),
+  /** When stuck (tool error or no progress for N iterations), what to do */
+  on_stuck: z.enum(["escalate_to_human", "create_ticket", "stop"]).default("escalate_to_human"),
+});
+
+// ─── Grounding rules ──────────────────────────────────────────────────────────
+// Evidence requirements that must be satisfied before an action is allowed.
+// Prevents hallucinated comments and unsubstantiated decisions.
+
+export const GroundingRule = z.object({
+  /** Human-readable label for this rule */
+  name: z.string(),
+  /** Which action tool this rule applies to */
+  applies_to: ActionTool,
+  /** What evidence must exist in the observation space before this action is taken */
+  require: z.string(),
+});
+
+// ─── Memory seeds ─────────────────────────────────────────────────────────────
+// Files / context to load at task start, before any observation or action.
+// This is what the agent "knows going in" — not what it discovers during the task.
+
+export const MemorySeeds = z.object({
+  /** Files to always read at task start (paths relative to repo root, or glob) */
+  always_read: z.array(z.string()).default([]),
+  /** Patterns to search for relevant context (e.g. "CHANGELOG", "ADR-*.md") */
+  context_patterns: z.array(z.string()).default([]),
+  /** What the agent should persist to memory after completing the task */
+  persist_after_task: z.array(z.string()).default([]),
+});
+
+// ─── Handoff format ───────────────────────────────────────────────────────────
+// Defines the structured output this agent produces for downstream agents.
+// Makes inter-agent communication explicit and machine-readable.
+
+export const HandoffFormat = z.object({
+  /** What downstream agent role consumes this output */
+  to_role: z.string(),
+  /** Output format: structured sections this agent always produces */
+  output_sections: z.array(z.string()),
+  /** Fields that must be present for the handoff to be valid */
+  required_fields: z.array(z.string()).default([]),
+  /** Plain-English description of what a valid handoff looks like */
+  description: z.string(),
+});
+
+// ─── Provider hint ────────────────────────────────────────────────────────────
+// Suggests which model tier this harness needs. Runtime may override.
+
+export const ProviderHint = z.object({
+  /**
+   * - "high_reasoning": complex decisions, architecture, security (Opus/o1-level)
+   * - "balanced": standard dev/review tasks (Sonnet-level)
+   * - "fast": simple, repetitive tasks (Haiku/mini-level)
+   */
+  tier: z.enum(["high_reasoning", "balanced", "fast"]),
+  /** Why this tier is needed */
+  reason: z.string().optional(),
+});
+
 // ─── Special focus areas ──────────────────────────────────────────────────────
 
 export const SpecialFocus = z.object({
@@ -164,6 +240,18 @@ export const HarnessSchema = z.object({
   severity: SeveritySystem,
   approval: ApprovalPolicy,
   size: SizePolicy.optional(),
+
+  // ── Agent runtime hints (borrowed from OpenHarness model) ──────────────────
+  /** Execution loop model: linear review vs. agentic iteration */
+  loop: AgentLoop.optional(),
+  /** Evidence requirements before action tools can fire */
+  grounding: z.array(GroundingRule).default([]),
+  /** Context to load at task start */
+  memory: MemorySeeds.optional(),
+  /** Structured output format for downstream agents */
+  handoffs: z.array(HandoffFormat).default([]),
+  /** Model tier hint for the runtime */
+  provider_hint: ProviderHint.optional(),
 
   // Comment style (output formatting)
   comment_style: CommentStyle,

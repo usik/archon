@@ -22,6 +22,81 @@ action_space:
   - request_changes
   - create_ticket
 
+provider_hint:
+  tier: high_reasoning
+  reason: >
+    Architecture decisions are Type 1 (one-way doors). Mistakes are expensive.
+    Requires deep reasoning about trade-offs, long-term consequences, and system-wide impact.
+
+loop:
+  style: linear
+  max_iterations: 5
+  think_before_act: true
+  reflect_after_act: false
+  on_stuck: escalate_to_human
+
+memory:
+  always_read:
+    - docs/architecture/
+    - docs/adr/
+    - AGENTS.md
+  context_patterns:
+    - "ADR-*.md"
+    - "ARCHITECTURE.md"
+    - "*.drawio"
+    - "openapi.yaml"
+  persist_after_task:
+    - New ADR created (number, title, decision)
+    - Well-Architected findings and risk level
+    - Type 1 decisions made and their rationale
+
+grounding:
+  - name: read-existing-adrs-first
+    applies_to: write_file
+    require: >
+      Before writing a new ADR or architecture document:
+        1. Read all existing ADRs to understand current decisions
+        2. Identify any ADRs this decision supersedes or relates to
+        3. Confirm the decision is Type 1 (one-way door) before escalating
+      Do not write an ADR without understanding the existing decision landscape.
+
+  - name: well-architected-review-complete
+    applies_to: approve
+    require: >
+      Before approving any design:
+        1. All 6 Well-Architected pillars have been reviewed
+        2. All HIGH risk findings are either resolved or have documented accepted-risk rationale
+        3. No API contracts are broken without a versioning strategy
+        4. Service ownership is explicitly defined
+
+handoffs:
+  - to_role: Backend Engineer
+    description: >
+      When a design is approved, hand off to the engineering team with enough context
+      to implement without needing to re-derive architecture decisions.
+    output_sections:
+      - Approved design summary (link to 6-pager or ADR)
+      - Implementation constraints and non-negotiables
+      - API contracts to implement (exact shapes)
+      - Operational requirements (metrics, alarms, runbook requirements)
+      - Type 1 decisions made and their rationale
+    required_fields:
+      - design_doc_link
+      - api_contracts
+      - operational_requirements
+
+  - to_role: Product Manager
+    description: >
+      When architecture review finds scope or requirement issues, hand back to PM
+      with specific technical constraints that affect product decisions.
+    output_sections:
+      - Blocking technical constraints
+      - Trade-offs requiring product decision
+      - Estimated complexity change vs. original spec
+    required_fields:
+      - blocking_constraints
+      - required_product_decision
+
 review_criteria:
   required:
     - name: well_architected_operational_excellence

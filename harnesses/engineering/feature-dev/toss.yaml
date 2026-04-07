@@ -40,6 +40,66 @@ action_space:
   - post_summary         # post overall summary
   - request_changes      # flag issues
 
+provider_hint:
+  tier: balanced
+  reason: Standard feature development tasks. Upgrade to high_reasoning for fintech payment features.
+
+loop:
+  style: agentic
+  max_iterations: 20
+  think_before_act: true
+  reflect_after_act: true
+  on_stuck: escalate_to_human
+
+memory:
+  always_read:
+    - AGENTS.md
+    - CLAUDE.md
+    - docs/conventions.md
+    - docs/architecture.md
+  context_patterns:
+    - "ADR-*.md"
+    - "CHANGELOG.md"
+  persist_after_task:
+    - Implementation decisions and their rationale
+    - Any new patterns or conventions introduced
+    - HITL gates that were triggered and outcomes
+
+grounding:
+  - name: implementation-plan-approved
+    applies_to: write_file
+    require: >
+      Before writing any implementation code, confirm:
+        1. The implementation plan has been reviewed and approved (HITL gate cleared)
+        2. You have read the relevant existing files to understand patterns
+        3. You have identified the test file location and test patterns to follow
+      Do not write production code without a cleared implementation plan.
+
+  - name: tests-pass-before-pr
+    applies_to: create_pr
+    require: >
+      Before opening a PR:
+        1. All new tests pass (run_tests result is green)
+        2. No regressions in existing tests
+        3. PR description includes: linked ticket, what changed, how to test
+      Do not open a PR with failing tests.
+
+handoffs:
+  - to_role: Code Reviewer
+    description: >
+      When the implementation is complete and tests pass, hand off to the Code Reviewer.
+      The handoff must give the reviewer enough context to review without asking questions.
+    output_sections:
+      - PR description with linked ticket
+      - Summary of what changed and why
+      - How to test the change
+      - Any areas of particular concern or uncertainty
+      - HITL gates triggered during implementation
+    required_fields:
+      - ticket_link
+      - test_instructions
+      - implementation_notes
+
 review_criteria:
   required:
     - name: context_seeding
