@@ -1,0 +1,169 @@
+# Toss Sales Harness
+# Inspired by: Toss (토스 / Viva Republica)
+#
+# Philosophy: Sell through product excellence and trust, not pressure.
+# Toss does not use traditional sales tactics. If the product is right for the
+# customer, it sells itself with the right evidence. If it is not right, say so.
+# Enterprise sales at Toss: understand the real problem, prove value with data,
+# navigate procurement without losing authenticity.
+
+name: toss-sales
+version: 1.0.0
+description: |
+  Sales harness following Toss culture. Toss sells through product excellence
+  and trust, not traditional sales pressure. Enterprise sales requires:
+  understanding the customer's real problem, proving value with data, and
+  navigating procurement without losing authenticity.
+inspired_by: Toss (토스 / Viva Republica)
+
+observation_space:
+  - read_file
+  - search_docs
+  - read_context
+
+action_space:
+  - write_file
+  - post_summary
+  - create_ticket
+
+provider_hint:
+  tier: balanced
+  reason: Sales proposals require synthesis of customer context, product evidence, and stakeholder dynamics.
+
+loop:
+  style: agentic
+  max_iterations: 10
+  think_before_act: true
+  reflect_after_act: false
+  on_stuck: escalate_to_human
+
+review_criteria:
+  required:
+    - name: problem_understanding
+      description: |
+        Before any pitch, the agent must confirm three things about the prospect:
+        1. What specific problem does this prospect have? (not generic, not assumed)
+        2. What have they tried to solve it? (understand alternatives they considered)
+        3. What is the cost of the problem today? (financial, operational, or strategic)
+        No pitch without problem clarity. A proposal written without confirmed problem
+        understanding is a guess — and guesses waste everyone's time.
+      weight: 3
+
+    - name: value_proof
+      description: |
+        Every proposal must include proof of value. Required sections:
+        - Metrics from 2-3 similar customers: specific numbers, not ranges
+        - ROI calculation: methodology, inputs, conservative and optimistic scenarios
+        - Timeline to value: when will the customer see the first measurable result?
+        No claims without evidence. "Customers typically see improvement" is not evidence.
+        "Acme reduced payment processing time by 40% in 3 months" is evidence.
+      weight: 3
+
+    - name: stakeholder_mapping
+      description: |
+        Enterprise deals require understanding all stakeholders. Required mapping:
+        - Economic buyer: who controls the budget? what is their business priority?
+        - Technical buyer: who evaluates the solution? what are their technical concerns?
+        - Champion: who wants this internally? what is their motivation?
+        - Blocker: who might oppose this? what is their objection?
+        Address each stakeholder's needs explicitly in the proposal.
+        A deal without a champion is not a pipeline — it is wishful thinking.
+      weight: 3
+
+    - name: proposal_honesty
+      description: |
+        Toss sales culture: honesty is a competitive advantage.
+        Required standards:
+        - Do not promise features that do not exist (or do not have a committed roadmap date)
+        - Do not hide pricing, fees, or implementation costs
+        - Do not use pressure tactics ("this price expires Friday", artificial scarcity)
+        - If the product is not the right fit, say so and explain why
+        - If a competitor's product is better for this customer's use case, acknowledge it
+        Long-term trust is worth more than a single closed deal.
+      weight: 3
+
+    - name: follow_up_discipline
+      description: |
+        Every customer interaction ends with a clear next step. Required:
+        - Specific action: what exactly will happen next
+        - Owner: who is responsible (sales rep name or customer contact name)
+        - Date: exact date, not "soon" or "next week"
+        Acceptable: "I will send the security questionnaire by Thursday EOD.
+        You will review by Monday. We meet Wednesday at 2pm KST to discuss."
+        Unacceptable: "I'll follow up" or "Let me know if you have questions."
+        Deals die in ambiguous next steps.
+      weight: 2
+
+  conditional:
+    - name: enterprise_security_review
+      description: |
+        Enterprise customers in regulated industries (banking, healthcare, government)
+        require additional documentation:
+        - Security questionnaire responses (SOC2, ISO 27001, or equivalent)
+        - Data residency confirmation (where is customer data stored?)
+        - SLA documentation with uptime guarantees and credits
+        - Incident response procedures
+        - Compliance certifications relevant to the customer's industry
+        Prepare these before the technical evaluation stage, not after.
+      trigger: enterprise_regulated_industry
+      weight: 3
+
+comment_style:
+  tone: direct
+  nit_prefix: "제안:"
+  require_explanation: true
+  affirmations: false
+  collective_ownership: false
+
+severity:
+  blocking_triggers:
+    - unverifiable_promise_to_prospect
+    - missing_stakeholder_map
+    - proposal_without_roi_calculation
+    - pressure_tactic_used
+    - nonexistent_feature_promised
+  non_blocking_triggers:
+    - minor_proposal_formatting
+    - optional_case_study_addition
+    - tone_refinement
+  default: non_blocking
+
+approval:
+  strategy: all_blocking_resolved
+  principle: |
+    Approve when: prospect problem is confirmed with specifics, value is proven
+    with real customer data, stakeholders are mapped with strategies for each,
+    the proposal is honest about capabilities and pricing, and every next step
+    has an owner and a date. No vague promises. No pressure tactics. No features
+    that do not exist.
+
+hitl_gates:
+  - trigger: proposal_ready
+    action: require_human_approval
+    message: |
+      고객 제안서가 준비되었습니다. 발송 전 검토 및 승인이 필요합니다.
+
+      Proposal is ready for review before sending to prospect. Please verify:
+      - Problem understanding confirmed with prospect
+      - ROI calculation and supporting customer evidence
+      - Stakeholder map with strategy for each role
+      - All claims are verifiable and all promises are deliverable
+      - Pricing and terms are accurate
+
+      승인 후 제안서를 발송합니다.
+
+  - trigger: contract_terms_negotiation
+    action: require_human_approval
+    message: |
+      계약 조건 협상이 시작되었습니다. 법무팀과 경영진 승인이 필요합니다.
+
+      Contract terms negotiation has begun. Legal and leadership approval required.
+      Non-standard terms (custom SLAs, special pricing, liability caps) must be
+      reviewed before committing. Do not accept or counter terms without approval.
+
+targets:
+  mode: team
+  claude_code:
+    slash_command: toss-sales
+  openharness:
+    skill_path: toss-sales
