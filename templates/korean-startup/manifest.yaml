@@ -1,0 +1,92 @@
+# Korean Startup Company Template
+# Full-stack agent company template for a Korean Series A engineering team.
+# Bundles: Paperclip org config + HaC harnesses per agent role + OpenHarness setup.
+#
+# Philosophy: Fast execution (빠른 실행), domain expertise per agent,
+# PIPA compliance baked in, Korean engineering culture encoded throughout.
+
+name: korean-startup
+version: 1.0.0
+description: |
+  Agent company template for a Korean Series A engineering team.
+  8 agents covering product, engineering, security, and operations.
+  Toss-style velocity with built-in Korean compliance (PIPA).
+language: ko  # primary language for agent communication
+
+# ── Agent roster ──────────────────────────────────────────────────────────────
+# Each agent has a role + the harness that defines its behavior.
+# Harnesses are loaded from the HarnessMart library.
+
+agents:
+  - id: pm
+    role: Product Manager
+    description: 제품 요구사항 정의, 티켓 생성, 우선순위 관리
+    harness: null  # coming soon: toss-product-manager
+    reports_to: human
+    budget_monthly_usd: 50
+
+  - id: architect
+    role: Software Architect
+    description: 시스템 설계, 기술 결정, 아키텍처 검토
+    harness: null  # coming soon: toss-system-design
+    reports_to: pm
+    budget_monthly_usd: 80
+
+  - id: backend_1
+    role: Backend Engineer
+    description: 서버 기능 구현, API 개발
+    harness: toss-feature-dev   # ← HarnessMart harness
+    reports_to: architect
+    budget_monthly_usd: 120
+
+  - id: backend_2
+    role: Backend Engineer
+    description: 서버 기능 구현, 데이터 레이어
+    harness: toss-feature-dev
+    reports_to: architect
+    budget_monthly_usd: 120
+
+  - id: reviewer
+    role: Code Reviewer
+    description: PR 리뷰, 코드 품질 게이트
+    harness: google-pr-review   # ← HarnessMart harness
+    reports_to: architect
+    budget_monthly_usd: 60
+
+  - id: security
+    role: Security Engineer
+    description: 보안 감사, PIPA 컴플라이언스, 취약점 스캔
+    harness: null  # coming soon: korean-fintech-appsec
+    reports_to: architect
+    budget_monthly_usd: 60
+
+  - id: qa
+    role: QA Engineer
+    description: 테스트 자동화, 버그 리포트, 회귀 테스트
+    harness: null  # coming soon: toss-qa
+    reports_to: architect
+    budget_monthly_usd: 60
+
+  - id: ops
+    role: DevOps / SRE
+    description: 배포, 모니터링, 인시던트 대응
+    harness: null  # coming soon: toss-incident
+    reports_to: architect
+    budget_monthly_usd: 80
+
+# ── Company-wide policies ─────────────────────────────────────────────────────
+policies:
+  language: Korean preferred, English accepted for code and comments
+  compliance:
+    - PIPA  # 개인정보 보호법
+  financial_code_requires_human_approval: true
+  pii_access_requires_security_review: true
+  production_deploy_requires_human_approval: true
+  max_autonomous_run_hours: 8  # agents pause after 8h without human check-in
+
+# ── Tool integrations ─────────────────────────────────────────────────────────
+integrations:
+  ticketing: jira         # or linear
+  communication: slack    # or kakao-work
+  vcs: github
+  ci: github-actions

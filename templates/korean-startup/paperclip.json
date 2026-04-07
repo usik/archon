@@ -1,0 +1,119 @@
+{
+  "company": {
+    "name": "Korean Startup",
+    "mission": "Build and ship products at startup speed with enterprise-grade safety",
+    "language": "ko",
+    "timezone": "Asia/Seoul"
+  },
+  "goals": [
+    {
+      "id": "g1",
+      "title": "제품을 빠르고 안전하게 출시",
+      "description": "Toss-style velocity: ship features fast, maintain quality floors, never compromise on security or compliance"
+    }
+  ],
+  "agents": [
+    {
+      "id": "pm",
+      "name": "PM Agent",
+      "title": "Product Manager",
+      "description": "제품 요구사항 정의, 티켓 생성, 우선순위 관리. Converts business goals into implementation-ready specs.",
+      "runtime": "openharness",
+      "skill": null,
+      "reports_to": "human",
+      "budget": { "monthly_usd": 50 },
+      "heartbeat": { "schedule": "0 9 * * 1-5", "description": "Daily morning standup — review backlog, create tickets for top priority items" }
+    },
+    {
+      "id": "architect",
+      "name": "Architect Agent",
+      "title": "Software Architect",
+      "description": "시스템 설계 및 기술 결정. Reviews implementation plans, enforces architecture boundaries, approves technical direction.",
+      "runtime": "openharness",
+      "skill": null,
+      "reports_to": "pm",
+      "budget": { "monthly_usd": 80 }
+    },
+    {
+      "id": "backend_1",
+      "name": "Backend Engineer 1",
+      "title": "Backend Engineer",
+      "description": "서버 기능 구현. Implements features using toss-feature-dev harness — context seeding, plan approval, implementation, tests, PR.",
+      "runtime": "openharness",
+      "skill": "toss-feature-dev",
+      "reports_to": "architect",
+      "budget": { "monthly_usd": 120 }
+    },
+    {
+      "id": "backend_2",
+      "name": "Backend Engineer 2",
+      "title": "Backend Engineer",
+      "description": "서버 기능 구현 (데이터 레이어). Handles data access, migrations, and domain model changes.",
+      "runtime": "openharness",
+      "skill": "toss-feature-dev",
+      "reports_to": "architect",
+      "budget": { "monthly_usd": 120 }
+    },
+    {
+      "id": "reviewer",
+      "name": "Code Reviewer",
+      "title": "Senior Engineer / Reviewer",
+      "description": "PR 리뷰 전담. Uses google-pr-review harness — thoroughness over speed, correctness first, mentoring tone.",
+      "runtime": "openharness",
+      "skill": "google-pr-review",
+      "reports_to": "architect",
+      "budget": { "monthly_usd": 60 },
+      "heartbeat": { "schedule": "0 */2 * * 1-5", "description": "Every 2 hours: review open PRs" }
+    },
+    {
+      "id": "security",
+      "name": "Security Agent",
+      "title": "Security Engineer",
+      "description": "보안 감사 및 PIPA 컴플라이언스. Scans PRs for security issues, enforces Korean privacy law requirements.",
+      "runtime": "openharness",
+      "skill": null,
+      "reports_to": "architect",
+      "budget": { "monthly_usd": 60 }
+    },
+    {
+      "id": "qa",
+      "name": "QA Agent",
+      "title": "QA Engineer",
+      "description": "테스트 자동화. Runs regression tests, files bug reports, validates feature acceptance criteria.",
+      "runtime": "openharness",
+      "skill": null,
+      "reports_to": "architect",
+      "budget": { "monthly_usd": 60 }
+    },
+    {
+      "id": "ops",
+      "name": "Ops Agent",
+      "title": "DevOps / SRE",
+      "description": "배포 및 모니터링. Handles deployments, monitors production, responds to incidents.",
+      "runtime": "openharness",
+      "skill": null,
+      "reports_to": "architect",
+      "budget": { "monthly_usd": 80 }
+    }
+  ],
+  "governance": {
+    "human_approval_required_for": [
+      "implementation_plan",
+      "production_deploy",
+      "payment_code_change",
+      "pii_access_pattern_change",
+      "new_external_dependency"
+    ],
+    "auto_approve": [
+      "documentation_update",
+      "test_addition",
+      "dependency_patch_update"
+    ],
+    "max_autonomous_run_hours": 8
+  },
+  "_harnesmart": {
+    "template_version": "1.0.0",
+    "required_harnesses": ["toss-feature-dev", "google-pr-review"],
+    "install": "harness template install korean-startup"
+  }
+}

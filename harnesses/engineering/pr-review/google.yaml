@@ -1,0 +1,182 @@
+# Google PR Review Harness
+# Based on: https://google.github.io/eng-practices/review/
+# Philosophy: "In doing a code review, you should make sure that: the codebase quality
+# improves over time. The only exception to this rule is in an emergency."
+# Approve if a CL definitively improves overall code health — even if it isn't perfect.
+
+name: google-pr-review
+version: 1.0.0
+description: |
+  PR review following Google's Engineering Practices documentation.
+  Prioritizes continuous improvement over perfection. Technical facts and
+  data override opinions. Use "Nit:" to distinguish non-blocking from blocking.
+inspired_by: Google
+source_url: https://google.github.io/eng-practices/review/
+
+action_space:
+  tools:
+    - read_diff
+    - read_file
+    - search_codebase
+    - post_inline
+    - post_summary
+    - approve
+    - request_changes
+    - suggest_change
+
+review_criteria:
+  required:
+    - name: design
+      description: |
+        Does the code integrate well with the rest of the system? Are interactions
+        between components well-designed? Is this the right layer of abstraction?
+      weight: 3
+
+    - name: correctness
+      description: |
+        Does the code do what the author intends? Is the logic correct for all
+        cases including edge cases? Are concurrent operations handled safely?
+      weight: 3
+
+    - name: complexity
+      description: |
+        Is the code more complex than it needs to be? Is the author solving a
+        problem that doesn't exist yet? Each line should be understandable at
+        quick read. Functions and classes should not do too much.
+      weight: 2
+
+    - name: tests
+      description: |
+        Does the code have correct, well-designed automated tests? Will the tests
+        actually fail when the code is broken? Are they brittle? Do they test
+        implementation details rather than behavior?
+      weight: 3
+
+    - name: naming
+      description: |
+        Are names for variables, functions, classes, etc. clear and descriptive?
+        Good names communicate intent without requiring comments.
+      weight: 2
+
+    - name: comments
+      description: |
+        Are comments clear and useful? Comments should explain WHY, not WHAT.
+        The code itself should explain what it does. TODO comments must reference
+        a tracking issue.
+      weight: 1
+
+    - name: style
+      description: |
+        Does the code follow the team's style guide? Style guide rules are
+        absolute. Personal preferences that aren't in the style guide should
+        be prefixed with "Nit:".
+      weight: 1
+
+    - name: code_health
+      description: |
+        Does this change improve or maintain the overall health of the codebase?
+        Is it strictly worse than it was before? Don't allow degradation even
+        in small increments ("not making it worse" is not the standard).
+      weight: 3
+
+  conditional:
+    - name: documentation
+      description: |
+        Are user-facing changes documented? Build/deployment process changes?
+        API changes? Public API modifications require documentation updates.
+      trigger: user_facing_or_api_change
+      weight: 2
+
+    - name: consistency
+      description: |
+        Is this inconsistent with other parts of the codebase? Inconsistency
+        increases cognitive load. Prefer consistency over local optimization.
+      trigger: introduces_new_pattern
+      weight: 2
+
+comment_style:
+  tone: mentoring
+  nit_prefix: "Nit:"
+  require_explanation: true
+  affirmations: true
+  collective_ownership: false
+  max_comment_length: 400
+
+severity:
+  blocking_triggers:
+    - correctness_bug
+    - security_vulnerability
+    - data_loss_risk
+    - performance_regression
+    - architecture_violation
+    - code_health_regression
+    - missing_required_tests
+    - breaking_api_change_undocumented
+  non_blocking_triggers:
+    - style_preference_not_in_guide
+    - minor_naming_improvement
+    - optional_refactor
+    - learning_opportunity
+  default: non_blocking
+
+approval:
+  strategy: net_positive
+  principle: |
+    Approve when the CL definitively improves the overall code health of the system,
+    even if it isn't perfect. Don't hold a CL hostage to hypothetical improvements.
+    The goal is continuous improvement, not perfection on every change.
+
+size:
+  warn_above_loc: 400
+  block_above_loc: null
+  split_advice: |
+    This CL is large. Consider splitting it into smaller, focused changes.
+    Large CLs are harder to review thoroughly. Each CL should do one thing.
+
+hitl_gates:
+  - trigger: security_vulnerability_found
+    action: flag_for_security_review
+    message: |
+      A potential security vulnerability was found. This requires security team review
+      before merge. Do not merge until cleared by a security reviewer.
+
+  - trigger: api_contract_changed
+    action: require_human_approval
+    message: |
+      This change modifies a public API contract. API changes require explicit
+      approval from a tech lead or maintainer to ensure backwards compatibility
+      and documentation are handled correctly.
+
+  - trigger: data_access_pattern_changed
+    action: flag_for_domain_expert
+    message: |
+      This change modifies data access patterns. A domain expert who understands
+      the data model should review this change.
+
+special_focus:
+  - name: over_engineering
+    description: |
+      Google explicitly warns against solving problems that don't exist yet.
+      Flag speculative generality, unnecessary abstractions, and YAGNI violations.
+    activate_on:
+      - "interface"
+      - "abstract"
+      - "factory"
+      - "strategy pattern"
+    instructions: |
+      Check if abstractions are justified by current requirements. If a simpler
+      approach would work for the actual use case, flag it. Ask: "Is this solving
+      a problem we actually have?"
+
+  - name: concurrent_access
+    description: Check for race conditions, deadlocks, and thread-safety issues.
+    activate_on:
+      - "goroutine"
+      - "thread"
+      - "async"
+      - "mutex"
+      - "lock"
+      - "channel"
+    instructions: |
+      Review concurrent operations carefully. Check for: proper synchronization,
+      absence of data races, correct use of locks, potential deadlocks.

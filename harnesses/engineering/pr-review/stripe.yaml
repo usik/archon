@@ -1,0 +1,244 @@
+# Stripe PR Review Harness
+# Based on: Stripe engineering culture — API-first, maintainability as north star,
+# "merged logic" philosophy (code must be adjustable after shipping),
+# quality standards > passing tests.
+# Philosophy: API contracts are sacred. Code must be maintainable years later.
+# Passing tests is not enough — code must meet Stripe's quality bar.
+
+name: stripe-pr-review
+version: 1.0.0
+description: |
+  PR review following Stripe's engineering culture.
+  API changes get a dedicated, strict review pass. Maintainability is the north star —
+  code must be adjustable long after it ships ("merged logic"). Passing tests is
+  necessary but not sufficient. Every API decision is treated as permanent.
+inspired_by: Stripe
+source_url: https://stripe.com/blog/engineering
+
+action_space:
+  tools:
+    - read_diff
+    - read_file
+    - search_codebase
+    - post_inline
+    - post_summary
+    - approve
+    - request_changes
+    - suggest_change
+
+review_criteria:
+  required:
+    - name: api_contract_quality
+      description: |
+        For any API-visible change: is the API design excellent? API decisions
+        at Stripe are treated as near-permanent. Check: naming is clear and
+        consistent with existing API conventions, parameters are well-typed,
+        error responses are structured and useful, versioning is handled,
+        the API is the simplest possible shape that solves the problem.
+        A mediocre API that ships is worse than a delayed one that's right.
+      weight: 3
+
+    - name: maintainability
+      description: |
+        Will this code be maintainable in 2-3 years by an engineer who didn't
+        write it? Is "merged logic" (business rules that change over time)
+        cleanly separated so it can be updated without surgery? Avoid:
+        deeply nested conditions, magic constants, implicit state machines,
+        unclear ownership of invariants.
+      weight: 3
+
+    - name: correctness
+      description: |
+        Is the logic correct? Stripe handles financial transactions — correctness
+        is non-negotiable. Check: decimal handling (never floats for money),
+        idempotency for payment operations, atomic operations where needed,
+        correct handling of partial failures.
+      weight: 3
+
+    - name: test_quality
+      description: |
+        Are tests correct AND high quality? Tests that pass but don't catch bugs
+        are worse than no tests (false confidence). Check: tests verify behavior
+        not implementation, edge cases are covered, tests are deterministic,
+        financial edge cases (zero amounts, negative amounts, large amounts) tested.
+      weight: 3
+
+    - name: error_handling
+      description: |
+        Are errors handled explicitly and usefully? Stripe's error responses
+        are part of the product — merchant developers read them. Check: error
+        messages are actionable, error codes are consistent, partial failure
+        scenarios are handled, errors don't expose internal details.
+      weight: 3
+
+    - name: idempotency
+      description: |
+        For any operation that modifies state: is it idempotent? Can it be
+        safely retried? Distributed payment systems require idempotency at
+        every layer. Check for idempotency keys, natural idempotency, or
+        explicit handling of duplicate requests.
+      weight: 3
+
+    - name: security
+      description: |
+        Financial APIs are a top attack target. Check: authentication on every
+        endpoint, authorization scoped to the correct objects, no PCI data
+        in logs, input validation, protection against timing attacks on
+        sensitive comparisons, SSRF risks in webhook/redirect URLs.
+      weight: 3
+
+    - name: backward_compatibility
+      description: |
+        Is this change backward-compatible? Stripe guarantees API stability
+        to merchants. Check: no removed fields in responses, no changed
+        semantics of existing parameters, no new required fields in requests,
+        deprecated paths still work.
+      weight: 3
+
+  conditional:
+    - name: webhook_reliability
+      description: |
+        For webhook-related changes: are events delivered reliably? Are events
+        structured consistently? Is the schema stable? Are event types
+        versioned properly?
+      trigger: webhook_change
+      weight: 3
+
+    - name: rate_limiting_impact
+      description: |
+        Does this change affect rate limiting? New endpoints need appropriate
+        limits. Changes to existing limits need migration consideration.
+      trigger: new_api_endpoint
+      weight: 2
+
+    - name: pci_compliance
+      description: |
+        For any change touching payment card data: is PCI compliance maintained?
+        Card data must never be logged, stored unencrypted, or transmitted
+        over non-TLS connections.
+      trigger: payment_card_data_access
+      weight: 3
+
+comment_style:
+  tone: direct
+  nit_prefix: "Polish:"
+  require_explanation: true
+  affirmations: false
+  collective_ownership: false
+  max_comment_length: 500
+
+severity:
+  blocking_triggers:
+    - api_design_issue
+    - correctness_bug
+    - float_arithmetic_for_money
+    - missing_idempotency
+    - missing_auth_check
+    - pci_violation
+    - breaking_api_change
+    - non_maintainable_merged_logic
+    - test_passes_but_doesnt_catch_bugs
+    - pii_in_logs
+  non_blocking_triggers:
+    - code_style_suggestion
+    - optional_polish
+    - documentation_improvement
+    - minor_naming_tweak
+  default: non_blocking
+
+approval:
+  strategy: all_blocking_resolved
+  principle: |
+    Passing tests is not sufficient — code must meet Stripe's quality bar.
+    API decisions are treated as permanent. Prefer a delayed, right API
+    over a fast, mediocre one. Maintainability is the north star.
+
+size:
+  warn_above_loc: 400
+  block_above_loc: null
+  split_advice: |
+    Consider separating API changes from implementation changes.
+    API design reviews benefit from being reviewed independently — the interface
+    can be approved before the implementation is complete.
+
+hitl_gates:
+  - trigger: new_api_endpoint_or_field
+    action: request_architecture_review
+    message: |
+      New public API surface requires API review council sign-off.
+      At Stripe, API decisions are treated as near-permanent commitments
+      to merchants. Schedule an API design review before merging.
+
+  - trigger: payment_processing_change
+    action: require_human_approval
+    message: |
+      Changes to payment processing logic require explicit sign-off from
+      the payments team lead AND a second reviewer. Payment bugs directly
+      impact merchant revenue and user trust.
+
+  - trigger: pci_data_access
+    action: flag_for_security_review
+    message: |
+      This change touches PCI-scoped data. Requires security and compliance
+      review before merging. Do not merge without explicit security sign-off.
+
+  - trigger: backward_incompatible_change_detected
+    action: require_human_approval
+    message: |
+      This change may break existing merchant integrations. Stripe guarantees
+      API stability. Breaking changes require: deprecation notice period,
+      migration guide, explicit approval from API council.
+
+special_focus:
+  - name: money_arithmetic
+    description: |
+      Stripe handles financial transactions — floating point arithmetic for
+      money is a critical bug. All monetary amounts must use integer cents
+      or a decimal library.
+    activate_on:
+      - "float"
+      - "double"
+      - "0.1"
+      - "amount"
+      - "price"
+      - "cost"
+    instructions: |
+      Check ALL arithmetic involving monetary values. Flag ANY use of float/double
+      for money as a BLOCKING issue. Monetary amounts should be:
+      - Integer cents (e.g., amount_cents: 1999 for $19.99)
+      - Or a proper Decimal type
+      Never float or double. This is not a suggestion — it's a correctness requirement.
+
+  - name: api_design_consistency
+    description: Check new API surface against existing Stripe API conventions.
+    activate_on:
+      - "endpoint"
+      - "params"
+      - "response"
+      - "serializer"
+      - "schema"
+    instructions: |
+      New API fields and endpoints must follow Stripe's conventions:
+      - snake_case for all field names
+      - Consistent error structure: {error: {type, code, message, param}}
+      - Amounts in smallest currency unit (cents)
+      - Timestamps as Unix timestamps
+      - IDs with type prefix (ch_, pi_, sub_, etc.)
+      - Paginated lists with {data: [], has_more: bool}
+      Inconsistency in the API is a blocking issue at Stripe.
+
+  - name: idempotency_check
+    description: Every state-modifying operation must be safely retryable.
+    activate_on:
+      - "POST"
+      - "charge"
+      - "create"
+      - "update"
+      - "delete"
+      - "transfer"
+    instructions: |
+      For every operation that modifies state, verify idempotency:
+      1. Does it accept an idempotency key?
+      2. Is it naturally idempotent (e.g., setting a value to X)?
+      3. Are duplicate requests handled explicitly?
+      Missing idempotency on payment operations is a BLOCKING issue.

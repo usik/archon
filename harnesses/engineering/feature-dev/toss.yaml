@@ -1,0 +1,283 @@
+# Toss Feature Development Harness
+# Inspired by: https://toss.tech/article/harness-for-team-productivity
+#
+# Philosophy: "저점을 높이기 (Raising the Floor)"
+# The best engineer on your team delivers in 10 minutes what takes others an hour.
+# The gap is not skill — it is context. This harness closes that gap for everyone.
+#
+# Toss operates at the speed of a startup inside the constraints of a regulated
+# fintech. Every workflow must be: fast enough to ship today, safe enough to
+# trust in production, and clear enough that any engineer can execute it.
+#
+# This harness encodes the full /new-feature workflow:
+# Context → Plan → HITL approval → Implement → Test → PR
+
+name: toss-feature-dev
+version: 1.0.0
+description: |
+  Feature development workflow following Toss engineering culture.
+  Encodes "저점을 높이기 (Raising the Floor)" — every engineer gets the same
+  quality output as your best LLM power-user, with one command.
+
+  Workflow: seed context → gather domain knowledge → write plan →
+  human approves plan → implement → write tests → open PR.
+  Fast iterations, minimal blocking gates, maximum context engineering.
+inspired_by: Toss (토스 / Viva Republica)
+source_url: https://toss.tech/article/harness-for-team-productivity
+
+action_space:
+  tools:
+    - read_file            # understand existing patterns
+    - search_codebase      # find related code, conventions, examples
+    - read_diff            # read recent changes for context
+    - write_file           # implement feature
+    - run_tests            # validate implementation
+    - create_branch        # create feature branch per naming convention
+    - create_ticket        # create Jira/Linear ticket with context
+    - post_inline          # comment on specific lines
+    - post_summary         # post overall summary
+    - approve              # approve when complete
+    - request_changes      # flag issues
+
+review_criteria:
+  required:
+    - name: context_seeding
+      description: |
+        Before writing a single line of code, the agent must seed its context:
+        read CLAUDE.md / AGENTS.md, scan the relevant domain directory,
+        find existing patterns for this type of feature, and identify
+        the team's conventions. Context engineering is step zero.
+        "A 엔지니어는 작업 전에 컨텍스트를 먼저 세팅합니다."
+      weight: 3
+
+    - name: domain_layer_awareness
+      description: |
+        Toss organizes knowledge in three layers:
+        - Global: company-wide security policy, base coding style
+        - Domain: payment / settlement / membership — specific business rules
+        - Local: this repo's implementation details
+        Identify which layer the feature touches. Apply the correct context.
+        Never apply Global constraints to Local decisions and vice versa.
+      weight: 3
+
+    - name: plan_before_code
+      description: |
+        Always write an implementation plan before writing code.
+        The plan must include:
+        - What the feature does (user-facing behavior)
+        - Which files will change and why
+        - Edge cases and how they're handled
+        - Test strategy
+        - Risk assessment (what could go wrong in production)
+        This plan is presented to the human for approval before proceeding.
+      weight: 3
+
+    - name: convention_consistency
+      description: |
+        Toss codebases have strong conventions. Before implementing:
+        search for 3 similar existing implementations and follow their pattern.
+        Naming, file structure, error handling, logging — all must be consistent
+        with what already exists. New patterns require explicit justification.
+      weight: 3
+
+    - name: test_coverage
+      description: |
+        Every new behavior requires a test. Toss operates in financial services —
+        untested code is a compliance risk, not just a quality risk.
+        Tests must cover: happy path, edge cases, error conditions.
+        Payment-related code requires additional: zero amounts, boundary values,
+        idempotency under retry.
+      weight: 3
+
+    - name: pr_description_quality
+      description: |
+        The PR description is the team's SSOT for this change.
+        It must answer: Why does this change exist? What does it do?
+        How was it tested? Are there any deployment considerations?
+        Is there a Jira ticket linked? PRs without context slow the team down.
+      weight: 2
+
+    - name: executable_ssot
+      description: |
+        Does this change update the relevant layer documentation?
+        Toss treats well-maintained harness/plugin files as "Executable SSOT" —
+        documents that are both human-readable guides and LLM-readable instructions.
+        If behavior changes, the documentation that encodes it must also change.
+      weight: 2
+
+  conditional:
+    - name: fintech_safety
+      description: |
+        For any code touching payments, settlements, or financial transactions:
+        - Integer arithmetic only (no floats for money)
+        - Idempotency on all state-modifying operations
+        - Explicit handling of partial failure states
+        - Audit log entries for every transaction
+        - HITL gate before touching production financial data
+      trigger: payment_or_financial_code
+      weight: 3
+
+    - name: pii_handling
+      description: |
+        Korea's PIPA (개인정보 보호법) is strict. Any code touching user PII:
+        - Must not log PII fields
+        - Must encrypt at rest
+        - Must have explicit consent scope
+        - Must have data retention limits documented
+      trigger: user_pii_access
+      weight: 3
+
+    - name: api_backward_compatibility
+      description: |
+        Toss has a super-app architecture with many internal consumers.
+        Any API change must be backward-compatible or have a migration plan.
+        Check: are there other services calling this API? What version are they on?
+      trigger: api_change
+      weight: 3
+
+comment_style:
+  tone: direct
+  nit_prefix: "제안:"
+  require_explanation: true
+  affirmations: false
+  collective_ownership: true
+  max_comment_length: 300
+
+severity:
+  blocking_triggers:
+    - missing_implementation_plan
+    - float_arithmetic_for_money
+    - missing_idempotency_on_financial_op
+    - pii_logged_or_exposed
+    - untested_new_behavior
+    - convention_violation_without_justification
+    - missing_jira_ticket_link
+    - api_breaking_change_undocumented
+  non_blocking_triggers:
+    - minor_naming_suggestion
+    - optional_refactor
+    - documentation_improvement
+    - performance_micro_optimization
+  default: non_blocking
+
+approval:
+  strategy: all_blocking_resolved
+  principle: |
+    Toss ships fast — but never at the cost of correctness or safety.
+    "빠른 실행" means removing unnecessary process, not skipping necessary checks.
+    Approve when: plan was human-approved, tests pass, conventions are followed,
+    and financial/PII safety checks are green.
+
+size:
+  warn_above_loc: 400
+  block_above_loc: null
+  split_advice: |
+    이 PR이 너무 큽니다. 다음과 같이 분리를 검토해 주세요:
+    1. 리팩토링 PR (행동 변경 없음)
+    2. 기능 구현 PR
+    작은 PR이 더 빠르게 리뷰되고, 문제 발생 시 롤백이 쉽습니다.
+
+hitl_gates:
+  - trigger: implementation_plan_ready
+    action: require_human_approval
+    message: |
+      구현 계획이 준비되었습니다. 진행 전 검토 및 승인이 필요합니다.
+
+      [Implementation plan presented above]
+
+      승인하시면 구현을 시작합니다. 수정 사항이 있으면 알려주세요.
+
+  - trigger: payment_or_financial_code
+    action: require_human_approval
+    message: |
+      이 변경사항은 결제/정산 코드를 수정합니다.
+      금융 코드 변경은 반드시 사람이 검토해야 합니다.
+      보안/컴플라이언스 검토 없이 병합하지 마세요.
+
+  - trigger: pii_data_access_pattern_changed
+    action: flag_for_security_review
+    message: |
+      개인정보(PII) 접근 패턴이 변경되었습니다.
+      한국 개인정보보호법(PIPA) 준수 여부를 확인해야 합니다.
+      보안팀 검토 후 병합하세요.
+
+  - trigger: new_external_api_dependency
+    action: require_human_approval
+    message: |
+      새로운 외부 API 의존성이 추가되었습니다.
+      보안 검토 및 SLA 확인이 필요합니다.
+
+special_focus:
+  - name: context_engineering_first
+    description: |
+      Toss's key insight: the difference between a 10-minute implementation and
+      a 1-hour implementation is context preparation, not coding speed.
+      Before any implementation, execute the full context seeding protocol.
+    activate_on: []
+    instructions: |
+      STEP 0 — Context Seeding Protocol (always run first):
+      1. Read CLAUDE.md or AGENTS.md in the repo root
+      2. Find the relevant domain directory (e.g. /packages/payment, /src/settlement)
+      3. Read the domain's README or index file
+      4. Search for 3 recent similar feature implementations
+      5. List the conventions you found: naming, file structure, error handling, logging
+      6. Only after this context is built: write the implementation plan
+
+      "컨텍스트를 먼저 세팅하면, 결과물은 처음부터 팀 컨벤션에 맞고 10분이면 머지 가능한 상태가 됩니다."
+
+  - name: three_layer_knowledge
+    description: |
+      Apply knowledge at the correct layer. Don't bring company-wide security
+      policy into a local utility function. Don't apply local conventions to
+      a cross-cutting architectural decision.
+    activate_on:
+      - "import"
+      - "from"
+      - "require"
+    instructions: |
+      Before implementing, identify which knowledge layer applies:
+
+      Global Layer: company-wide rules (security policy, auth patterns, base coding style)
+      → Apply to: authentication, authorization, data encryption, API design
+
+      Domain Layer: business-specific rules (payment flows, settlement logic, user lifecycle)
+      → Apply to: business logic, domain models, domain-specific error handling
+
+      Local Layer: this repo's conventions (file structure, naming, test patterns)
+      → Apply to: implementation details, local utilities, test organization
+
+      When in conflict: Local < Domain < Global (higher layers always win)
+
+  - name: toss_speed_principles
+    description: |
+      Toss ships fast without sacrificing safety. Speed comes from removing
+      unnecessary process, not from skipping necessary checks.
+    activate_on: []
+    instructions: |
+      SPEED principles to follow:
+      - Small, focused PRs (one feature per PR)
+      - Context-first (saves time in review)
+      - Plan approval before implementation (saves back-and-forth)
+      - Tests written alongside code, not after
+
+      SAFETY principles never to skip:
+      - Financial code requires integer arithmetic + idempotency
+      - PII requires PIPA compliance check
+      - New external dependencies require security review
+      - Production changes require human approval gate
+
+  - name: raising_the_floor
+    description: |
+      This harness exists to give every engineer the same quality output
+      as the team's best LLM power-user. Every engineer using this harness
+      should produce merge-ready code in the same time as the best engineer.
+    activate_on: []
+    instructions: |
+      At the end of every feature implementation, verify:
+      - Would a senior Toss engineer approve this PR without requesting changes?
+      - Does the implementation follow the patterns found during context seeding?
+      - Is the test coverage sufficient to catch regressions?
+      - Is the PR description complete enough to review without asking questions?
+
+      If any answer is no, iterate before opening the PR.
+      "저점을 높이기 — 이 하네스는 모든 엔지니어가 최고 엔지니어와 같은 결과물을 낼 수 있도록 설계되었습니다."

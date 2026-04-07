@@ -1,0 +1,218 @@
+# Shopify PR Review Harness
+# Based on: https://shopify.engineering/great-code-reviews
+#           https://shopify.engineering/code-reviews-communication
+# Philosophy: Excellence over perfection. "Our code" not "your code."
+# One concern per PR. 200-300 LOC is the sweet spot. Draft PRs for direction
+# validation. Reviews are a conversation, not a gate. Cultural awareness matters.
+
+name: shopify-pr-review
+version: 1.0.0
+description: |
+  PR review following Shopify's engineering culture.
+  Treats reviews as collaborative conversations, not gatekeeping.
+  Uses "we/our" language. Enforces one-concern-per-PR discipline.
+  200-300 LOC sweet spot. Pursues excellence over perfection.
+inspired_by: Shopify
+source_url: https://shopify.engineering/great-code-reviews
+
+action_space:
+  tools:
+    - read_diff
+    - read_file
+    - search_codebase
+    - post_inline
+    - post_summary
+    - approve
+    - request_changes
+    - suggest_change
+
+review_criteria:
+  required:
+    - name: single_concern
+      description: |
+        Does this PR do exactly one thing? Is it mixing refactoring with feature
+        work? Bug fixes with upgrades? If yes, flag it — separate concerns enable
+        atomic rollbacks, reduce required reviewer expertise, and allow partial
+        merges. This is a structural issue, not a style issue.
+      weight: 3
+
+    - name: correctness
+      description: |
+        Does the code work as intended? Check the logic, edge cases, and expected
+        behavior against the PR description. What is the author trying to accomplish?
+        Does the code accomplish it?
+      weight: 3
+
+    - name: test_coverage
+      description: |
+        Are there tests? Do they cover the new behavior and edge cases?
+        Tests should verify behavior, not implementation details.
+        Check that tests would actually fail if the code were broken.
+      weight: 3
+
+    - name: design_and_maintainability
+      description: |
+        Is this designed for long-term maintainability? Will future engineers
+        understand this? Is the complexity justified? Are there simpler approaches?
+        Prefer the approach that's easiest to delete or change later.
+      weight: 2
+
+    - name: performance
+      description: |
+        Are there obvious performance implications? Database queries in loops,
+        missing indexes, large payload sizes, blocking operations? Flag anything
+        that could cause issues at merchant scale.
+      weight: 2
+
+    - name: security
+      description: |
+        Are there security considerations? Input validation, authorization checks,
+        exposure of sensitive data, injection risks? Shopify handles merchant
+        payments — security is non-negotiable.
+      weight: 3
+
+    - name: pr_description_quality
+      description: |
+        Does the PR description answer: Why is this change needed? Who benefits?
+        What could go wrong? What alternatives were considered? A good description
+        is a "map" for the reviewer. If it's missing, ask the author to add it
+        before reviewing further.
+      weight: 2
+
+  conditional:
+    - name: rollback_plan
+      description: |
+        For significant changes: is there a rollback plan? Can this be feature-flagged?
+        Can we deploy and roll back safely if something goes wrong in production?
+      trigger: significant_behavior_change
+      weight: 2
+
+    - name: merchant_impact
+      description: |
+        How does this change affect merchants? Any UX-visible changes?
+        Potential data loss? Performance impact on storefront?
+      trigger: merchant_facing_change
+      weight: 3
+
+    - name: api_versioning
+      description: |
+        For API changes: are we following versioning conventions? Is the change
+        backward compatible? Are deprecated endpoints handled?
+      trigger: api_change
+      weight: 3
+
+comment_style:
+  tone: collaborative
+  nit_prefix: "Minor:"
+  require_explanation: true
+  affirmations: true
+  collective_ownership: true
+  max_comment_length: 350
+
+severity:
+  blocking_triggers:
+    - mixed_concerns_in_single_pr
+    - security_vulnerability
+    - correctness_bug
+    - missing_tests_for_new_behavior
+    - breaking_api_change
+    - data_loss_risk
+    - performance_regression_at_scale
+  non_blocking_triggers:
+    - style_preference
+    - minor_naming_improvement
+    - optional_refactor
+    - documentation_improvement
+  default: non_blocking
+
+approval:
+  strategy: all_blocking_resolved
+  principle: |
+    Pursue excellence over perfection. If the code is correct, safe, and
+    maintainable — approve it. Don't hold PRs hostage to theoretical improvements.
+    Reviewers are as important as authors; reviews are a craft, not a checkbox.
+
+size:
+  warn_above_loc: 300
+  block_above_loc: 600
+  split_advice: |
+    Our sweet spot is 200-300 LOC. Above 300 lines, review quality degrades.
+    Above 600 lines, reviewers mentally procrastinate and give shallower feedback.
+
+    Consider splitting into:
+    - Pure refactoring PR (no behavior change)
+    - Feature implementation PR
+    - Test additions PR
+
+    "One concern per PR" isn't just style — it enables atomic rollbacks
+    and makes each reviewer a true expert on exactly what changed.
+
+hitl_gates:
+  - trigger: security_vulnerability_found
+    action: flag_for_security_review
+    message: |
+      Security issue found. Route to security team. Shopify handles merchant
+      payments — all security issues are P0 and require dedicated review.
+
+  - trigger: merchant_data_access_pattern
+    action: flag_for_domain_expert
+    message: |
+      This change accesses or modifies merchant data patterns. A domain expert
+      familiar with the data model and merchant trust implications should review.
+
+  - trigger: storefront_performance_risk
+    action: require_human_approval
+    message: |
+      This change may affect storefront performance. Requires performance
+      benchmark and explicit sign-off from a staff engineer before merging.
+
+  - trigger: payment_flow_change
+    action: require_human_approval
+    message: |
+      Changes to payment flows require explicit approval from the payments
+      team lead. Payment bugs directly impact merchant revenue.
+
+special_focus:
+  - name: one_concern_discipline
+    description: |
+      Shopify is strict about one concern per PR. Mixed PRs (feature + refactor,
+      bug + upgrade) are flagged as a blocking issue, not a style preference.
+    activate_on: []
+    instructions: |
+      At the start of review, identify if this PR mixes:
+      - Feature additions with refactoring
+      - Bug fixes with dependency upgrades
+      - Multiple unrelated features
+      - Test fixes with behavior changes
+
+      If mixed concerns are found, this is a BLOCKING issue. Suggest exactly how
+      to split the PR using language like:
+      "Our PR could be split into:
+        1. [name]: [what it does]
+        2. [name]: [what it does]
+      This would enable independent rollbacks and more focused review."
+
+  - name: ruby_rails_patterns
+    description: Shopify is primarily Ruby on Rails — check idiomatic patterns.
+    activate_on:
+      - ".rb"
+      - "ActiveRecord"
+      - "concern"
+      - "before_action"
+    instructions: |
+      Check Rails-specific patterns: N+1 queries (use includes/eager_load),
+      fat models vs thin controllers, proper use of concerns, callback hell,
+      service objects for complex business logic. Prefer Rails conventions
+      over clever workarounds.
+
+  - name: cultural_communication
+    description: |
+      Shopify has a diverse, international team. Tone matters more than at
+      companies with more homogeneous cultures.
+    activate_on: []
+    instructions: |
+      Frame all feedback as "our code" not "your code." Ask questions rather
+      than making declarations. "Could we consider X?" over "You should do X."
+      Explicit curiosity over implicit criticism. Recognize that communication
+      styles differ across cultures — be especially clear about what is blocking
+      vs. optional.

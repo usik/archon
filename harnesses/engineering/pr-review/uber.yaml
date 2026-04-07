@@ -1,0 +1,221 @@
+# Uber PR Review Harness
+# Based on: https://www.uber.com/blog/ureview/
+# Philosophy: Multi-assistant architecture — separate concerns into Standard (bugs),
+# BestPractices (conventions), and AppSec (security) passes. Quality over quantity:
+# 75% of comments are marked useful by engineers. Signal-to-noise ratio is everything.
+# AI augments human reviewers; humans make final decisions.
+
+name: uber-pr-review
+version: 1.0.0
+description: |
+  PR review following Uber's uReview multi-assistant architecture.
+  Structured into three passes: standard bugs, best practices, and security.
+  Prioritizes signal-to-noise ratio — only post comments that are genuinely useful.
+  75%+ of comments should be actionable. Uses confidence scoring to filter noise.
+inspired_by: Uber
+source_url: https://www.uber.com/blog/ureview/
+
+action_space:
+  tools:
+    - read_diff
+    - read_file
+    - search_codebase
+    - post_inline
+    - post_summary
+    - approve
+    - request_changes
+    - suggest_change
+
+review_criteria:
+  required:
+    # Pass 1: Standard bugs (uReview "Standard Assistant")
+    - name: exception_handling
+      description: |
+        Are exceptions and errors handled correctly? Are there uncaught exceptions,
+        swallowed errors, or missing error propagation? Check for empty catch blocks.
+      weight: 3
+
+    - name: logic_correctness
+      description: |
+        Are there logic flaws, off-by-one errors, null dereferences, or incorrect
+        conditions? Check boundary conditions, loop termination, and return values.
+      weight: 3
+
+    - name: resource_management
+      description: |
+        Are resources properly acquired and released? Check for memory leaks,
+        unclosed connections, file handles, goroutine leaks. Use of defer/finally
+        where applicable.
+      weight: 3
+
+    - name: concurrency_safety
+      description: |
+        Are concurrent operations safe? Check for data races, improper use of
+        shared state, missing synchronization, and deadlock potential.
+      weight: 3
+
+    # Pass 2: Best practices (uReview "Best Practices Assistant")
+    - name: uber_conventions
+      description: |
+        Does the code follow team/language-specific conventions? Check naming
+        patterns, package structure, error wrapping conventions, logging patterns,
+        and any team-specific standards in existing code.
+      weight: 2
+
+    - name: testability
+      description: |
+        Is the code testable? Are dependencies injectable? Are functions reasonably
+        sized and focused? Would this be hard to unit test?
+      weight: 2
+
+    - name: observability
+      description: |
+        Is the code observable in production? Are there appropriate log statements
+        at the right levels? Are metrics/traces added for new critical paths?
+        Is it possible to debug issues in production?
+      weight: 2
+
+    - name: performance_implications
+      description: |
+        Are there obvious performance issues? N+1 queries, unnecessary allocations
+        in hot paths, blocking calls in async contexts, O(n²) algorithms where
+        better is possible?
+      weight: 2
+
+    # Pass 3: Security (uReview "AppSec Assistant")
+    - name: input_validation
+      description: |
+        Is user/external input validated and sanitized? Check for injection
+        vulnerabilities (SQL, command, LDAP), missing bounds checks, and
+        path traversal risks.
+      weight: 3
+
+    - name: authentication_authorization
+      description: |
+        Are auth checks present and correct? Can an authenticated user access
+        resources they shouldn't? Are permission checks bypassed anywhere?
+      weight: 3
+
+    - name: sensitive_data
+      description: |
+        Is sensitive data (PII, credentials, tokens) handled correctly?
+        Not logged, not stored in plaintext, not transmitted insecurely?
+      weight: 3
+
+  conditional:
+    - name: api_contract
+      description: |
+        For API changes: is the contract backward-compatible? Are breaking changes
+        flagged? Is the new API consistent with existing patterns?
+      trigger: api_or_rpc_change
+      weight: 3
+
+    - name: migration_safety
+      description: |
+        For DB migrations: is the migration safe to run on a live system?
+        Are there locking issues? Can it be rolled back? Is it zero-downtime?
+      trigger: database_migration
+      weight: 3
+
+comment_style:
+  tone: direct
+  nit_prefix: "Optional:"
+  require_explanation: true
+  affirmations: false
+  collective_ownership: false
+  max_comment_length: 300
+
+severity:
+  blocking_triggers:
+    - security_vulnerability
+    - logic_bug
+    - data_race
+    - uncaught_exception_in_critical_path
+    - pii_exposure
+    - missing_auth_check
+    - breaking_api_change
+    - zero_downtime_migration_risk
+  non_blocking_triggers:
+    - convention_suggestion
+    - minor_performance_improvement
+    - observability_enhancement
+    - style_suggestion
+  default: non_blocking
+
+approval:
+  strategy: all_blocking_resolved
+  principle: |
+    Post only high-confidence, actionable comments. If a comment would not
+    be useful to the author, don't post it. Quality over quantity.
+    AI augments human review — the final LGTM is always a human decision.
+
+size:
+  warn_above_loc: 500
+  block_above_loc: null
+  split_advice: |
+    Large diffs reduce review quality. Consider splitting into:
+    1. Refactoring/structural changes (no behavior change)
+    2. New behavior/feature additions
+    This makes each diff easier to reason about independently.
+
+hitl_gates:
+  - trigger: security_vulnerability_found
+    action: flag_for_security_review
+    message: |
+      AppSec Assistant flagged a potential security issue. Route to AppSec team
+      for review before merging. Do not merge without AppSec sign-off.
+
+  - trigger: pii_or_sensitive_data_exposure
+    action: flag_for_security_review
+    message: |
+      Potential PII or sensitive data exposure detected. Requires security
+      and legal/compliance review before merging.
+
+  - trigger: database_schema_change
+    action: require_human_approval
+    message: |
+      Database schema changes require explicit DBA/platform review. Verify:
+      migration is zero-downtime, rollback plan exists, query performance
+      is acceptable after migration.
+
+  - trigger: cross_team_api_change
+    action: request_architecture_review
+    message: |
+      This change modifies an API consumed by other teams. Requires review
+      from a staff engineer or architecture council before merging.
+
+special_focus:
+  - name: confidence_filtering
+    description: |
+      Only post comments when confidence is high. Avoid noise.
+      If multiple similar comments would be posted, merge into one.
+    activate_on: []
+    instructions: |
+      Before posting any comment, ask: "Would an expert engineer agree this
+      is a real issue?" If uncertain, don't post. Merge semantically similar
+      comments into one. Prefer one precise comment over three vague ones.
+
+  - name: go_error_handling
+    description: Uber is heavy Go — check idiomatic error handling.
+    activate_on:
+      - ".go"
+      - "err :"
+      - "errors.New"
+      - "fmt.Errorf"
+    instructions: |
+      Check Go-specific error handling: errors should be wrapped with context
+      using fmt.Errorf("operation: %w", err). Errors should not be silently
+      ignored. Check for err != nil patterns after every operation that can fail.
+
+  - name: service_reliability
+    description: Check patterns that affect service reliability at scale.
+    activate_on:
+      - "http.Client"
+      - "timeout"
+      - "retry"
+      - "circuit"
+      - "grpc"
+    instructions: |
+      Review reliability patterns: timeout configurations, retry logic with
+      backoff, circuit breakers, graceful degradation. Uber operates at massive
+      scale — missing timeouts or retries can cascade into outages.
