@@ -612,19 +612,53 @@
       <div class="steps">
         <div class="step">
           <div class="step-num">01</div>
-          <h3>Pick your harnesses</h3>
-          <p>Browse a library of harnesses encoding the best engineering cultures — Toss, Google, AWS, Stripe. Each defines exactly what the agent can see, do, and decide.</p>
+          <h3>Choose a package</h3>
+          <p>Pick <code>zero-to-market-kr</code>, <code>zero-to-market-jp</code>, or <code>zero-to-market-us</code>. One package spins up a full 14-agent team — PM to customer service — with the right harnesses pre-assigned.</p>
         </div>
         <div class="step">
           <div class="step-num">02</div>
-          <h3>Assemble your team</h3>
-          <p>Assign roles: PM, architect, developer, reviewer, security, QA, ops. Each agent gets its own harness. They hand off to each other automatically.</p>
+          <h3>Connect your LLM and run</h3>
+          <p>Bring your own API key. Archon runs the team. Agents hand off to each other automatically. Every critical decision pauses for your approval.</p>
         </div>
         <div class="step">
           <div class="step-num">03</div>
-          <h3>Connect your LLM and ship</h3>
-          <p>Bring your own API key. Archon runs your agent team on top of it. You stay in control — every critical decision has a human-in-the-loop gate.</p>
+          <h3>Customize for your team</h3>
+          <p>Advanced users can swap any harness, edit criteria in the UI, or write custom harnesses in YAML. The library grows with your team.</p>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Packages -->
+  <section class="workflow" id="packages" style="border-top: 1px solid rgba(255,255,255,0.06);">
+    <div class="container">
+      <div class="section-label">Packages</div>
+      <h2 class="section-title">One package.<br/>Full team. Zero config.</h2>
+      <p class="section-sub">Pre-wired 14-agent teams for Korean, Japanese, and US markets. Advanced users can swap any harness.</p>
+
+      <div class="steps" style="margin-top:3rem">
+        <div class="step">
+          <div class="step-num" style="color:#f87171">KR</div>
+          <h3>zero-to-market-kr</h3>
+          <p>Toss engineering culture. PIPA + FSC + FSS compliance. Korean GTM — KakaoTalk, Naver, Korean fintech regulations.</p>
+        </div>
+        <div class="step">
+          <div class="step-num" style="color:#fb923c">JP</div>
+          <h3>zero-to-market-jp</h3>
+          <p>Mercari engineering culture. APPI + My Number + J-SOX compliance. Omotenashi customer service. Nemawashi sales.</p>
+        </div>
+        <div class="step">
+          <div class="step-num" style="color:#60a5fa">US</div>
+          <h3>zero-to-market-us</h3>
+          <p>AWS + Stripe + Google culture. Working Backwards, Well-Architected, API permanence. Global market defaults.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:2.5rem; background:var(--gray-900); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius); padding:1.5rem; font-family:var(--mono); font-size:0.82rem; line-height:1.9;">
+        <div><span style="color:#52525b"># 14 agents pre-wired: PM → Architect → Dev → Security → QA → DevOps → Docs → GTM → Marketing → Sales → CS</span></div>
+        <div><span style="color:#a1a1aa">$</span> <span style="color:#fff">archon deploy-package zero-to-market-kr</span></div>
+        <div><span style="color:#4ade80">✓ Deployed 14 agents → Korean market configuration</span></div>
+        <div><span style="color:#52525b">  PM: toss-pm · Security: korean-fintech-security · GTM: toss-gtm-strategist ...</span></div>
       </div>
     </div>
   </section>
@@ -637,7 +671,7 @@
           <div class="section-label">Harness library</div>
           <h2 class="section-title">Best engineering cultures,<br/>ready to deploy</h2>
         </div>
-        <p class="section-sub" style="margin-bottom:0">11 harnesses across feature dev, PR review, security, ops, architecture, and PM. Korean and Japanese market–ready.</p>
+        <p class="section-sub" style="margin-bottom:0">20 harnesses across engineering, security, and business. Korean, Japanese, and US market–ready.</p>
       </div>
 
       <div class="harness-grid">
@@ -646,25 +680,17 @@
             <span class="harness-name">toss-feature-dev</span>
             <span class="badge badge-team">team</span>
           </div>
-          <p class="harness-desc">Feature development following Toss engineering culture. 저점을 높이기 — every engineer ships like your best.</p>
-          <div class="harness-meta">
-            <span>4 observe</span>
-            <span>7 act</span>
-            <span>agentic · 20 iter</span>
-          </div>
+          <p class="harness-desc">Feature dev following Toss culture. 저점을 높이기 — every engineer ships like your best.</p>
+          <div class="harness-meta"><span>4 observe</span><span>7 act</span><span>agentic</span></div>
         </div>
 
         <div class="harness-card">
           <div class="harness-top">
-            <span class="harness-name">google-pr-review</span>
-            <span class="badge badge-solo">solo</span>
+            <span class="harness-name">mercari-feature-dev</span>
+            <span class="badge badge-team">team</span>
           </div>
-          <p class="harness-desc">PR review following Google's Engineering Practices. Readability, correctness, maintainability.</p>
-          <div class="harness-meta">
-            <span>3 observe</span>
-            <span>5 act</span>
-            <span>linear</span>
-          </div>
+          <p class="harness-desc">Go Bold, blameless culture, feature flags, small PRs. Mercari engineering culture.</p>
+          <div class="harness-meta"><span>4 observe</span><span>6 act</span><span>agentic</span></div>
         </div>
 
         <div class="harness-card">
@@ -672,12 +698,44 @@
             <span class="harness-name">korean-fintech-security</span>
             <span class="badge badge-team">team</span>
           </div>
-          <p class="harness-desc">Security audit + PIPA compliance for Korean fintech. FSC rules, RRN handling, payment API security.</p>
-          <div class="harness-meta">
-            <span>3 observe</span>
-            <span>4 act</span>
-            <span>high reasoning</span>
+          <p class="harness-desc">PIPA · FSC · FSS · RRN handling · payment API security. Korean fintech compliance.</p>
+          <div class="harness-meta"><span>3 observe</span><span>4 act</span><span>high reasoning</span></div>
+        </div>
+
+        <div class="harness-card">
+          <div class="harness-top">
+            <span class="harness-name">japanese-enterprise-security</span>
+            <span class="badge badge-team">team</span>
           </div>
+          <p class="harness-desc">APPI · My Number · J-SOX · FSA. Japanese enterprise compliance built in.</p>
+          <div class="harness-meta"><span>3 observe</span><span>4 act</span><span>high reasoning</span></div>
+        </div>
+
+        <div class="harness-card">
+          <div class="harness-top">
+            <span class="harness-name">toss-gtm-strategist</span>
+            <span class="badge badge-team">team</span>
+          </div>
+          <p class="harness-desc">North Star metric, beachhead segment, channel-market fit. Korean GTM-ready.</p>
+          <div class="harness-meta"><span>3 observe</span><span>4 act</span><span>linear</span></div>
+        </div>
+
+        <div class="harness-card">
+          <div class="harness-top">
+            <span class="harness-name">toss-customer-service</span>
+            <span class="badge badge-team">team</span>
+          </div>
+          <p class="harness-desc">Complete resolution, root cause escalation, product feedback loop. No deflection.</p>
+          <div class="harness-meta"><span>3 observe</span><span>3 act</span><span>agentic</span></div>
+        </div>
+
+        <div class="harness-card">
+          <div class="harness-top">
+            <span class="harness-name">google-pr-review</span>
+            <span class="badge badge-solo">solo</span>
+          </div>
+          <p class="harness-desc">PR review following Google Engineering Practices. Readability, correctness, maintainability.</p>
+          <div class="harness-meta"><span>3 observe</span><span>5 act</span><span>linear</span></div>
         </div>
 
         <div class="harness-card">
@@ -685,38 +743,17 @@
             <span class="harness-name">aws-architect</span>
             <span class="badge badge-team">team</span>
           </div>
-          <p class="harness-desc">Architecture review following AWS Well-Architected Framework. 6 pillars, ADRs, Type 1/2 decisions.</p>
-          <div class="harness-meta">
-            <span>4 observe</span>
-            <span>5 act</span>
-            <span>high reasoning</span>
-          </div>
+          <p class="harness-desc">Well-Architected Framework, ADRs, Type 1/2 decisions. Architecture done right.</p>
+          <div class="harness-meta"><span>4 observe</span><span>5 act</span><span>high reasoning</span></div>
         </div>
 
         <div class="harness-card">
           <div class="harness-top">
-            <span class="harness-name">toss-ops</span>
-            <span class="badge badge-team">team</span>
+            <span class="harness-name">+ 12 more harnesses</span>
+            <span class="badge badge-solo">all modes</span>
           </div>
-          <p class="harness-desc">DevOps / SRE following Toss culture. Deployment rings, DB migration safety, 빠른 감지·복구.</p>
-          <div class="harness-meta">
-            <span>4 observe</span>
-            <span>6 act</span>
-            <span>agentic</span>
-          </div>
-        </div>
-
-        <div class="harness-card">
-          <div class="harness-top">
-            <span class="harness-name">stripe-pr-review</span>
-            <span class="badge badge-solo">solo</span>
-          </div>
-          <p class="harness-desc">PR review following Stripe's engineering culture. API design permanence, idempotency, backward compat.</p>
-          <div class="harness-meta">
-            <span>3 observe</span>
-            <span>5 act</span>
-            <span>linear</span>
-          </div>
+          <p class="harness-desc">toss-ops · toss-qa · toss-pm · toss-frontend-dev · aws-data-engineer · aws-technical-writer · toss-marketer · toss-sales · stripe-pr-review · shopify-pr-review · uber-pr-review · aws-feature-dev</p>
+          <div class="harness-meta"><span>20 total</span><span>KR · JP · US</span></div>
         </div>
       </div>
     </div>

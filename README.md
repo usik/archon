@@ -1,254 +1,214 @@
-# HarnessMart
+# Archon
 
 **English** · [한국어](README.ko.md)
 
-> The harness library for agent-first engineering teams in Korea and Japan.
-> Every agent. Every workflow. One command.
+> Deploy your AI agent team in minutes.
+> Pick a package. Connect your LLM. Ship.
 
 ---
 
-## What is a Harness?
+## What is Archon?
 
-An AI agent without a harness is a blank slate — capable, but directionless.
-A **harness** defines the agent's action space, domain expertise, behavioral guardrails,
-and governance rules. It encodes *how work gets done* in your organization.
+Archon is a full-stack AI agent platform — definition layer, execution engine, and orchestration UI in one. You bring your own LLM API key. Archon brings the team.
 
 ```
-Without harness:  Agent knows how to code. Doesn't know your team's standards.
-With harness:     Agent codes, reviews, and ships exactly like your best engineer.
+Without Archon:  You prompt one agent. It knows how to code. It doesn't know your standards.
+With Archon:     You deploy a team. Each agent knows its role, culture, and compliance requirements.
 ```
-
-HarnessMart is the library of harnesses — encoded from the best engineering cultures
-in Korea, Japan, and globally — deployable in one command.
 
 ---
 
 ## The Stack
 
-HarnessMart sits at the definition layer of a four-layer agent infrastructure stack.
-We use best-in-class open-source tools at every other layer.
-
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  HARNESMART  (this project)                             │
-│  harness library · company templates · KR/JP community  │
+│  Archon UI                                              │
+│  agent teams · org charts · budgets · governance        │
 ├─────────────────────────────────────────────────────────┤
-│  HaC CLI  (this project)                                │
-│  harness define · build · validate · deploy             │
+│  Archon Engine                                          │
+│  agent runtime · 43 tools · memory · agentic loops     │
 ├─────────────────────────────────────────────────────────┤
-│  OpenHarness  github.com/HKUDS/OpenHarness  ★6.4k       │
-│  agent runtime · 43 tools · provider routing · memory   │
+│  Archon Harness  (this repo)                            │
+│  harness library · packages · CLI · KR/JP community     │
 ├─────────────────────────────────────────────────────────┤
-│  Paperclip  github.com/paperclipai/paperclip  ★48.8k    │
-│  org charts · goals · budgets · governance              │
-├─────────────────────────────────────────────────────────┤
-│  LLM                                                    │
-│  Claude · GPT-5 · Codex · HyperCLOVA X · EXAONE        │
+│  Your LLM                                               │
+│  Claude · GPT · HyperCLOVA X · EXAONE · any API        │
 └─────────────────────────────────────────────────────────┘
 ```
 
-We build the definition and library layer.
-We do not compete with OpenHarness or Paperclip — we are deeply grateful to their teams
-for building the runtime and orchestration infrastructure that makes this possible.
-
 ---
 
-## Quick Start
+## Zero to Market Packages
 
-```bash
-# Install
-npm install -g harness-cli
+One command spins up a full 14-agent team — PM to customer service.
 
-# List available harnesses
-harness list
+| Package | Culture | Compliance | Best for |
+|---|---|---|---|
+| `zero-to-market` | Toss + AWS + Google | — | Any product |
+| `zero-to-market-kr` | Toss | PIPA · FSC · FSS | Korean market |
+| `zero-to-market-jp` | Mercari | APPI · J-SOX · FSA | Japanese market |
+| `zero-to-market-us` | AWS + Stripe | — | US / global |
 
-# Deploy Toss-style feature development harness to OpenHarness
-harness deploy harnesses/engineering/feature-dev/toss.yaml --target openharness
+**The 14-agent team:**
 
-# Deploy to Claude Code
-harness deploy harnesses/engineering/pr-review/google.yaml --target claude
-
-# Deploy all harnesses
-harness deploy-all --target openharness
-```
+| Role | Default Harness |
+|---|---|
+| PM | toss-pm |
+| Architect | aws-architect |
+| Frontend Dev | toss-frontend-dev |
+| Backend Dev | toss-feature-dev |
+| Security | korean-fintech-security |
+| QA | toss-qa |
+| DevOps | toss-ops |
+| PR Reviewer | google-pr-review |
+| Data Engineer | aws-data-engineer |
+| Technical Writer | aws-technical-writer |
+| GTM Strategist | toss-gtm-strategist |
+| Marketer | toss-marketer |
+| Sales | toss-sales |
+| Customer Service | toss-customer-service |
 
 ---
 
 ## Harness Library
 
-### Product Management
+20 harnesses across engineering, security, and business roles.
 
-| Harness | Culture | Description |
+### Engineering
+
+| Harness | Culture | Mode | Description |
+|---|---|---|---|
+| `toss-feature-dev` | Toss | team | 저점을 높이기 — every engineer ships like your best |
+| `aws-feature-dev` | AWS | team | Working Backwards → 6-pager → ORR → gradual deploy |
+| `mercari-feature-dev` | Mercari | team | Go Bold, blameless culture, feature flags, small PRs |
+| `toss-frontend-dev` | Toss | team | Performance, PIPA-compliant forms, Core Web Vitals |
+| `aws-architect` | AWS | team | Well-Architected, ADRs, Type 1/2 decisions |
+| `aws-data-engineer` | AWS | team | Schema safety, idempotent pipelines, data contracts |
+| `aws-technical-writer` | AWS | solo | PR/FAQ, API docs, runbooks |
+| `toss-ops` | Toss | team | Deployment rings, DB migration safety, fast recovery |
+| `toss-qa` | Toss | team | AC coverage, payment idempotency, boundary values |
+
+### PR Review
+
+| Harness | Culture | Mode |
 |---|---|---|
-| `toss-pm` | 🇰🇷 Toss | 고객 중심 — customer problem → AC → success metric → unblock engineering |
+| `google-pr-review` | Google | solo |
+| `shopify-pr-review` | Shopify | solo |
+| `stripe-pr-review` | Stripe | solo |
+| `uber-pr-review` | Uber | solo |
 
-### Engineering / Feature Development
+### Security & Compliance
 
-| Harness | Culture | Description |
+| Harness | Regulations | Mode |
 |---|---|---|
-| `toss-feature-dev` | 🇰🇷 Toss | 저점을 높이기 — context seeding → plan approval → implement → PR |
-| `aws-feature-dev` | Amazon / AWS | Working Backwards → 6-pager → implement → ORR → one-box → canary → global |
+| `korean-fintech-security` | PIPA · FSC · FSS · RRN | team |
+| `japanese-enterprise-security` | APPI · My Number · J-SOX · FSA | team |
 
-### Engineering / PR Review
+### Business
 
-| Harness | Culture | Description |
-|---|---|---|
-| `google-pr-review` | Google | Mentoring tone, Nit: system, approve on net positive |
-| `uber-pr-review` | Uber | Multi-pass (bugs → conventions → security), signal-to-noise |
-| `shopify-pr-review` | Shopify | One concern per PR, 200-300 LOC, collective ownership |
-| `stripe-pr-review` | Stripe | API contracts are permanent, float-for-money is blocking |
-
-### Engineering / Security
-
-| Harness | Culture | Description |
-|---|---|---|
-| `korean-fintech-security` | 🇰🇷 Korean Fintech | PIPA compliance + AppSec — PII, RRN, float-for-money, payment security |
-
-### Engineering / QA
-
-| Harness | Culture | Description |
-|---|---|---|
-| `toss-qa` | 🇰🇷 Toss | AC coverage, regression tests, payment idempotency, given/when/then |
-
-### Engineering / Ops
-
-| Harness | Culture | Description |
-|---|---|---|
-| `toss-ops` | 🇰🇷 Toss | 빠른 감지·복구 — deployment safety, ORR, incident runbook, deployment windows |
-
-### Engineering / Architecture
-
-| Harness | Culture | Description |
-|---|---|---|
-| `aws-architect` | Amazon / AWS | Well-Architected (6 pillars), ADRs, Type 1/2 decisions, service boundaries, anti-patterns |
-
-**Coming soon**: `kakao-scale-review` · `naver-search-review` · `mercari-trust-safety` · `smarthr-compliance` · `japan-appi-compliance`
+| Harness | Culture | Mode | Description |
+|---|---|---|---|
+| `toss-pm` | Toss | team | Customer problem → AC → success metric |
+| `toss-gtm-strategist` | Toss | team | North Star metric, beachhead segment, launch plan |
+| `toss-marketer` | Toss | team | Truth-based content, channel-market fit |
+| `toss-sales` | Toss | team | Value-proof proposals, stakeholder mapping |
+| `toss-customer-service` | Toss | team | Complete resolution, root cause escalation |
 
 ---
 
-## Company Templates
-
-Company templates bundle a complete agent organization:
-**Paperclip org config + HarnessMart harnesses + OpenHarness setup**.
+## CLI
 
 ```bash
-# Browse templates
-ls templates/
+npm install -g @archon/cli
 
-# Use a template
-# 1. Deploy harnesses to OpenHarness
-harness deploy-all --target openharness
+# List all harnesses with mode
+archon list
 
-# 2. Import paperclip.json into your Paperclip instance
-# Paperclip UI → Companies → Import → templates/korean-startup/paperclip.json
+# Validate a harness
+archon validate harnesses/engineering/feature-dev/toss.yaml
+
+# Check deployment mode
+archon mode harnesses/engineering/security/korean-fintech.yaml
+
+# Build a harness
+archon build harnesses/engineering/feature-dev/toss.yaml
+
+# Deploy all (auto-routes by mode)
+archon deploy-all
 ```
-
-### Available Templates
-
-| Template | Agents | Description |
-|---|---|---|
-| `korean-startup` | 8 | Series A 한국 스타트업 — Toss velocity, PIPA compliance |
 
 ---
 
-## CLI Reference
+## Deployment Modes
 
-```bash
-harness list                              # list all harnesses
-harness validate <file>                   # validate harness YAML
-harness build <file>                      # compile to SKILL.md
-harness build-all                         # compile all harnesses
-harness preview <file>                    # dry-run preview
-harness deploy <file> --target <target>   # deploy to runtime
-harness deploy-all --target <target>      # deploy all
+| Mode | Runtime | Deploy target |
+|---|---|---|
+| `solo` | Your LLM directly | `~/.claude/skills/` |
+| `team` | Archon Engine | `~/.archon/skills/` |
+| `company` | Archon UI + Engine | Archon dashboard |
 
-# Deploy targets:
-#   openharness   →  ~/.openharness/skills/   (default)
-#   claude        →  ~/.claude/skills/
-#   local         →  ./compiled/
-```
+Modes are inferred automatically from harness structure. Override with `targets.mode`.
 
 ---
 
 ## Writing a Harness
 
+Harnesses follow the **OAKP model**: Observation · Action · Knowledge · Permission.
+
 ```yaml
 name: my-harness
 version: 1.0.0
-description: What this harness does
+description: What this agent does
 
-action_space:
-  tools: [read_file, search_codebase, post_inline, approve]
+observation_space:        # What the agent can SEE (no side effects)
+  - read_file
+  - search_codebase
 
-review_criteria:
+action_space:             # What the agent can DO (has side effects)
+  - write_file
+  - create_pr
+
+review_criteria:          # What the agent KNOWS (domain expertise)
   required:
-    - name: correctness
-      description: Does the code do what it intends?
-      weight: 3
+    - name: my_criterion
+      description: What to check
+      weight: 2
 
-comment_style:
-  tone: mentoring   # mentoring | direct | collaborative | trust_based
-  nit_prefix: "Nit:"
-  require_explanation: true
+hitl_gates:               # When to pause for human approval (PERMISSION)
+  - trigger: risky_action
+    action: require_human_approval
+    message: Please review before proceeding.
 
 severity:
-  blocking_triggers: [correctness_bug, security_vulnerability]
-  non_blocking_triggers: [style_preference]
+  blocking_triggers: [critical_issue]
   default: non_blocking
 
 approval:
-  strategy: net_positive  # net_positive | all_blocking_resolved | manual_only
+  strategy: all_blocking_resolved
+  principle: Approve when all blocking issues resolved.
 
-hitl_gates:
-  - trigger: security_vulnerability_found
-    action: flag_for_security_review
-    message: Escalate to security team before merging.
+comment_style:
+  tone: direct
+  require_explanation: true
 ```
 
 ---
 
-## Integrations
+## Tiers
 
-- [OpenHarness Integration](integrations/openharness.md) — deploy harnesses to the OpenHarness runtime
-- [Paperclip Integration](integrations/paperclip.md) — use harnesses in Paperclip agent companies
-
----
-
-## Contributing
-
-Contributions welcome — especially harnesses encoding Korean and Japanese engineering cultures.
-
-```bash
-git clone https://github.com/your-org/harnesmart
-cd harnesmart
-npm install
-npm run build
-
-# Add your harness
-vim harnesses/engineering/feature-dev/your-company.yaml
-
-# Validate
-harness validate harnesses/engineering/feature-dev/your-company.yaml
-
-# Submit PR
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for harness quality standards.
+| | Solo | Team | Company |
+|---|---|---|---|
+| **For** | Individual devs | Engineering teams | Organizations |
+| **Harness library** | ✓ | ✓ | ✓ |
+| **Multi-agent handoffs** | — | ✓ | ✓ |
+| **Agentic loops** | — | ✓ | ✓ |
+| **HITL approval gates** | — | ✓ | ✓ |
+| **Org chart of agents** | — | — | ✓ |
+| **Budget controls** | — | — | ✓ |
+| **Audit trails** | — | — | ✓ |
 
 ---
 
-## Acknowledgements
+## Early Access
 
-This project stands on the shoulders of:
-
-- **[OpenHarness](https://github.com/HKUDS/OpenHarness)** (★6.4k) — the agent runtime that executes our harnesses. Built by HKUDS, MIT license.
-- **[Paperclip](https://github.com/paperclipai/paperclip)** (★48.8k) — the orchestration layer that organizes agents into companies. MIT license.
-- **[Toss Tech Blog](https://toss.tech/article/harness-for-team-productivity)** — 김용성's article on using harnesses to raise the floor of team LLM productivity. The inspiration for this project.
-- **[OpenAI Harness Engineering](https://openai.com/index/harness-engineering/)** — Ryan Lopopolo's article on building production software with zero manually-written code. The market signal that made this urgent.
-- **[Claude Code](https://claude.ai/code)** & **[Thariq's tweet](https://x.com/trq212/status/2027463795355095314)** — for defining the action space problem and the skill/plugin format that harnesses compile to.
-
----
-
-## License
-
-MIT
+→ [usik.github.io/archon](https://usik.github.io/archon)
