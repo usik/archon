@@ -30,7 +30,7 @@
       "title": "Software Architect",
       "description": "시스템 설계 및 기술 결정. Reviews implementation plans, enforces architecture boundaries, approves technical direction.",
       "runtime": "openharness",
-      "skill": null,
+      "skill": "aws-architect",
       "reports_to": "pm",
       "budget": { "monthly_usd": 80 }
     },
@@ -113,7 +113,7 @@
   },
   "_harnesmart": {
     "template_version": "1.0.0",
-    "required_harnesses": ["toss-pm", "toss-feature-dev", "google-pr-review", "korean-fintech-security", "toss-qa", "toss-ops"],
+    "required_harnesses": ["toss-pm", "aws-architect", "toss-feature-dev", "google-pr-review", "korean-fintech-security", "toss-qa", "toss-ops"],
     "install": "harness template install korean-startup"
   }
 }

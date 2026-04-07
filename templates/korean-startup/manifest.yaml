@@ -28,7 +28,7 @@ agents:
   - id: architect
     role: Software Architect
     description: 시스템 설계, 기술 결정, 아키텍처 검토
-    harness: null  # coming soon: toss-architect (aws-feature-dev used for design reviews)
+    harness: aws-architect
     reports_to: pm
     budget_monthly_usd: 80
 

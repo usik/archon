@@ -116,7 +116,13 @@ harness deploy-all --target openharness
 |---|---|---|
 | `toss-ops` | 🇰🇷 Toss | 빠른 감지·복구 — deployment safety, ORR, incident runbook, deployment windows |
 
-**Coming soon**: `kakao-scale-review` · `naver-search-review` · `mercari-trust-safety` · `smarthr-compliance` · `japan-appi-compliance` · `toss-architect`
+### Engineering / Architecture
+
+| Harness | Culture | Description |
+|---|---|---|
+| `aws-architect` | Amazon / AWS | Well-Architected (6 pillars), ADRs, Type 1/2 decisions, service boundaries, anti-patterns |
+
+**Coming soon**: `kakao-scale-review` · `naver-search-review` · `mercari-trust-safety` · `smarthr-compliance` · `japan-appi-compliance`
 
 ---
 
