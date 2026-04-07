@@ -116,10 +116,19 @@ One command spins up a full 14-agent team — PM to customer service.
 
 ---
 
+## Install
+
+```bash
+curl -fsSL https://usik.github.io/archon/install.sh | bash
+```
+
+Requires Node.js 18+. Clones the repo, builds the CLI, and adds `archon` to your PATH.
+
+To update later: re-run the same command.
+
 ## CLI
 
 ```bash
-npm install -g @archon/cli
 
 # List all harnesses with mode
 archon list
