@@ -1,0 +1,345 @@
+# Mercari Feature Development Harness
+# Inspired by: Mercari (メルカリ) engineering culture
+#
+# Philosophy: "Go Bold, All for One, Be a Pro, Move Fast"
+# Mercari ships dozens of times per day from a blameless culture where
+# every failure is a learning opportunity and engineers own their products deeply.
+#
+# This harness encodes the full feature development workflow with Mercari's values:
+# product understanding → bold decision → implement → test → flag → PR
+
+name: mercari-feature-dev
+version: 1.0.0
+description: |
+  Feature development workflow following Mercari engineering culture.
+  Encodes "Go Bold, All for One, Be a Pro, Move Fast" — engineers take
+  ownership of product outcomes, not just implementation tickets.
+
+  Workflow: product understanding → bold decision plan → implement with
+  feature flags → comprehensive tests → blameless PR with documented reasoning.
+  Deploys frequently, rolls back by toggling a flag.
+inspired_by: Mercari (メルカリ)
+
+observation_space:
+  - read_file            # understand existing patterns and product context
+  - search_codebase      # find related code, feature flag patterns, conventions
+  - read_diff            # read recent changes for context
+  - read_context         # read AGENTS.md, CLAUDE.md, engineering docs
+
+action_space:
+  - write_file           # implement feature
+  - run_tests            # validate implementation
+  - create_branch        # create feature branch per naming convention
+  - post_inline          # comment on specific lines
+  - post_summary         # post overall summary
+  - request_changes      # flag issues
+
+provider_hint:
+  tier: balanced
+  reason: Standard feature development tasks. Upgrade to high_reasoning for marketplace trust or payment features.
+
+loop:
+  style: agentic
+  max_iterations: 20
+  think_before_act: true
+  reflect_after_act: true
+  on_stuck: escalate_to_human
+
+memory:
+  always_read:
+    - AGENTS.md
+    - CLAUDE.md
+    - docs/engineering-ladder.md
+  context_patterns:
+    - "ADR-*.md"
+    - "CHANGELOG.md"
+    - "feature-flags*.md"
+  persist_after_task:
+    - Bold decisions made and their documented reasoning
+    - Feature flag names and rollout strategy
+    - Post-mortem artifacts generated
+    - HITL gates that were triggered and outcomes
+
+grounding:
+  - name: product-understanding-confirmed
+    applies_to: write_file
+    require: >
+      Before writing any implementation code, confirm:
+        1. You can articulate why this feature exists (user problem it solves)
+        2. You understand how success will be measured
+        3. The feature flag strategy is defined (flag name, default value, rollout plan)
+        4. You have read relevant existing files to understand patterns
+      Do not implement without product understanding — it is a Mercari anti-pattern.
+
+  - name: feature-flag-strategy-defined
+    applies_to: create_pr
+    require: >
+      Before opening a PR:
+        1. All new features are gated behind a feature flag
+        2. All tests pass (run_tests result is green)
+        3. PR size is under 400 LOC, or a justification is documented
+        4. Bold decisions in the implementation are documented inline
+      Do not open a PR without a feature flag for new functionality.
+
+handoffs:
+  - to_role: Code Reviewer
+    description: >
+      When implementation is complete and tests pass, hand off to the Code Reviewer.
+      The reviewer should understand product context, bold decisions, and rollback strategy
+      without asking questions.
+    output_sections:
+      - Product context and user problem solved
+      - Feature flag name, default value, rollout and rollback plan
+      - Bold decisions and non-obvious architectural reasoning
+      - PR size and split justification if over 400 LOC
+      - Test coverage summary and edge cases
+      - Post-mortem hooks and error learning artifacts
+    required_fields:
+      - feature_flag_name
+      - product_context
+      - bold_decision_rationale
+
+review_criteria:
+  required:
+    - name: bold_decision_documented
+      description: |
+        "Go Bold" means making decisions — not undocumented ones.
+        If the implementation makes a non-obvious architectural choice,
+        the reasoning must be documented inline with a comment starting with
+        "Decision:" explaining why this approach was chosen over alternatives.
+        Engineers at Mercari take ownership of decisions. Ownership requires documentation.
+        Undocumented non-obvious decisions are a Mercari anti-pattern.
+      weight: 3
+
+    - name: product_understanding
+      description: |
+        Before implementing, the engineer must be able to answer:
+        - Why does this feature exist?
+        - What user problem does it solve?
+        - How will success be measured?
+        Implementation without product understanding is a Mercari anti-pattern.
+        "Be a Pro" means understanding the product deeply, not just executing tickets.
+        Check: Does the PR description contain product context, or just implementation notes?
+      weight: 3
+
+    - name: blameless_error_handling
+      description: |
+        Every error state is a learning opportunity. Silent failures are prohibited.
+        Blameless culture starts with observable systems — you cannot improve what you
+        cannot measure. Error handling must be:
+        - Informative (error message explains what happened and where)
+        - Logged with structured fields for post-mortem analysis
+        - Never silent (no empty catch blocks, no swallowed errors)
+        Post-mortem format when errors surface: what happened, timeline, root cause, action items.
+        No blame, only system improvement.
+      weight: 3
+
+    - name: small_pr_discipline
+      description: |
+        "Move Fast" requires small, safe changes. Mercari deploys dozens of times per day.
+        PRs should be small enough to review in 30 minutes.
+        - Under 400 LOC: acceptable
+        - 400-600 LOC: must include a written justification in the PR description
+        - Over 600 LOC: blocking — split the PR
+        Splitting strategy: refactoring PR first (no behavior change), then feature PR.
+        Small PRs are easier to review, safer to deploy, and faster to roll back.
+      weight: 3
+
+    - name: feature_flag_usage
+      description: |
+        New features must be gated behind feature flags for gradual rollout.
+        No big-bang releases. Rollback = toggle the flag.
+        Required checks:
+        - Is there a feature flag wrapping the new functionality?
+        - Is the flag defaulted to OFF (safe default)?
+        - Is there a rollout plan (percentage-based, user-segment-based)?
+        - Can the feature be disabled without a code deploy?
+        Exception: pure refactoring or bug fixes without new user-facing behavior.
+      weight: 3
+
+    - name: post_mortem_culture
+      description: |
+        Any incident or significant failure must generate a post-mortem document.
+        Post-mortem format: what happened, timeline, root cause, action items.
+        No blame, only learning. The system failed, not the person.
+        Required checks:
+        - Does error handling emit structured log events for post-mortem analysis?
+        - For incident-causing changes: is there a post-mortem template reference in the PR?
+        - Are action items from relevant post-mortems reflected in this implementation?
+      weight: 2
+
+  conditional:
+    - name: marketplace_trust
+      description: |
+        For code touching listings, payments, or user reputation — additional trust checks.
+        Mercari is a marketplace: trust between buyers and sellers is the product.
+        Required checks:
+        - Fraud prevention patterns are present for listing/payment flows
+        - Seller and buyer trust signals are preserved or improved
+        - Marketplace integrity is not degraded by this change
+        - No client-controlled pricing or trust score manipulation
+      trigger: marketplace_code_modified
+      weight: 3
+
+    - name: appi_compliance
+      description: |
+        APPI (個人情報保護法) compliance for code touching Japanese user data.
+        2022 amendments expanded requirements significantly.
+        Required checks:
+        - Collection purpose specified before collection
+        - Retention limited to stated purpose
+        - Individual rights honored: disclosure, correction, deletion, suspension of use
+        - Cross-border transfers compliant (opt-in consent or adequacy determination)
+        - Sensitive personal information (要配慮個人情報) handled with explicit consent
+        - Data breach reportable to PPC within 3-5 days
+      trigger: user_data_modified
+      weight: 3
+
+comment_style:
+  tone: collaborative
+  nit_prefix: "提案:"
+  require_explanation: true
+  affirmations: true
+  collective_ownership: true
+  max_comment_length: 350
+
+severity:
+  blocking_triggers:
+    - missing_feature_flag_for_new_feature
+    - silent_failure_no_logging
+    - pr_size_exceeds_600_loc_without_justification
+    - missing_product_context
+    - appi_violation
+    - marketplace_integrity_risk
+    - undocumented_non_obvious_decision
+  non_blocking_triggers:
+    - minor_naming_suggestion
+    - optional_refactor
+    - documentation_improvement
+    - post_mortem_hook_could_be_richer
+  default: non_blocking
+
+approval:
+  strategy: all_blocking_resolved
+  principle: |
+    Mercari ships fast — but Go Bold requires documented reasoning, not recklessness.
+    Approve when: product context is in the PR, feature flag is in place, tests pass,
+    PR is reviewable in 30 minutes, and error states generate learning artifacts.
+    "All for One" — approval is team knowledge transfer, not a gatekeeping exercise.
+
+size:
+  warn_above_loc: 400
+  block_above_loc: 600
+  split_advice: |
+    このPRはサイズが大きすぎます。以下の分割を検討してください:
+    1. リファクタリングPR（動作変更なし）
+    2. 機能実装PR（フィーチャーフラグ付き）
+    小さいPRはレビューが速く、問題発生時のロールバックも容易です。
+    "Move Fast" = small PRs, frequent deploys, feature flags for safety.
+
+hitl_gates:
+  - trigger: incident_detected
+    action: flag_for_domain_expert
+    message: |
+      インシデントが検出されました。ドメインエキスパートのレビューが必要です。
+
+      Incident detected during implementation. Domain expert review required.
+      Post-mortem template: what happened, timeline, root cause, action items.
+      No blame — improve the system.
+
+  - trigger: marketplace_integrity_risk
+    action: require_human_approval
+    message: |
+      マーケットプレイスの信頼性に影響する変更が検出されました。
+      マーケットプレイスインテグリティチームのレビューが必要です。
+
+      Marketplace integrity risk detected. Human approval required before merge.
+      Check: fraud prevention, seller/buyer trust signals, pricing integrity.
+
+  - trigger: appi_violation_detected
+    action: require_human_approval
+    message: |
+      APPI違反の可能性が検出されました（個人情報保護法）。
+      法務部または個人情報保護管理者のレビューが必要です。
+
+      Possible APPI violation detected. Legal/privacy officer review required before merge.
+
+  - trigger: missing_feature_flag
+    action: require_human_approval
+    message: |
+      新機能にフィーチャーフラグがありません。
+      メルカリの展開方針では、すべての新機能にフィーチャーフラグが必要です。
+
+      New feature missing feature flag. Mercari's deployment policy requires
+      all new features to be gated. Rollback = toggle the flag.
+
+special_focus:
+  - name: go_bold_with_documentation
+    description: |
+      Go Bold means making decisions and owning them — not asking permission for
+      every small choice. But bold decisions must be documented so the team can
+      learn from them and future engineers can understand the reasoning.
+    activate_on: []
+    instructions: |
+      STEP 0 — Before implementing:
+      1. Read CLAUDE.md or AGENTS.md in the repo root
+      2. Identify the product context: why does this feature exist?
+      3. Find the feature flag service and understand the naming convention
+      4. Search for 3 similar existing implementations to understand patterns
+      5. Identify any non-obvious architectural choices you plan to make
+
+      STEP 1 — While implementing:
+      - For every non-obvious decision, add an inline comment: "Decision: [reasoning]"
+      - Gate new behavior behind a feature flag from the start
+      - Ensure every error state is logged with structured fields
+
+      STEP 2 — Before PR:
+      - PR description must include product context (user problem, success metric)
+      - Feature flag name and rollout plan must be in the PR description
+      - Bold decisions must be summarized in the PR description
+
+  - name: blameless_post_mortem_hooks
+    description: |
+      Every error state is a learning opportunity. Observable errors enable
+      blameless post-mortems. Silent errors make learning impossible.
+    activate_on:
+      - "catch"
+      - "except"
+      - "error"
+      - "err"
+    instructions: |
+      When reviewing or writing error handling:
+      1. No empty catch blocks — every caught error must be logged or re-thrown
+      2. Log with structured fields: {error_type, context, user_id (hashed), timestamp}
+      3. Error messages must describe WHAT happened and WHERE, not just "error occurred"
+      4. For user-facing errors: friendly message + internal structured log
+      5. For incident-level errors: trigger alerting + structured log for post-mortem
+
+      Post-mortem log entry format:
+      {event: "feature_error", feature_flag: "...", error_type: "...", context: {...}, timestamp: "..."}
+
+  - name: feature_flag_discipline
+    description: |
+      Mercari deploys dozens of times per day safely because feature flags
+      decouple deployment from release. This is the core mechanism of "Move Fast."
+    activate_on:
+      - "if"
+      - "feature"
+      - "flag"
+      - "rollout"
+    instructions: |
+      Feature flag checklist:
+      1. Flag name follows convention: {team}_{feature}_{behavior} (e.g. listing_bulk_upload_enabled)
+      2. Default value is OFF (safe default — new feature is hidden until explicitly enabled)
+      3. Flag evaluation happens at the boundary (controller/handler), not deep in business logic
+      4. Business logic does not branch on the flag — the flag controls which code path is called
+      5. There is a plan to remove the flag after full rollout (flag debt is real debt)
+
+      Rollback plan: "If [feature] causes issues, set {flag_name} to false. No deploy required."
+
+targets:
+  mode: team
+  claude_code:
+    slash_command: mercari-feature-dev
+  openharness:
+    skill_path: mercari-feature-dev

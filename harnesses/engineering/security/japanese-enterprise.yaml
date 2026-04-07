@@ -1,0 +1,344 @@
+# Japanese Enterprise Security Harness
+# Inspired by: Mercari / LINE / Rakuten security and compliance practices
+#
+# Philosophy: Rigorous APPI (個人情報保護法) compliance, J-SOX IT governance,
+# and Japanese enterprise security standards. PPC enforcement is increasing.
+# Security findings have legal consequences — use maximum reasoning capacity.
+
+name: japanese-enterprise-security
+version: 1.0.0
+description: >
+  Security audit and APPI (個人情報保護法) compliance harness for Japanese enterprise.
+  Covers AppSec review, Japanese privacy law requirements (APPI 2022 amendments),
+  J-SOX IT governance requirements, FSA financial regulations, and Japanese
+  enterprise-specific security patterns.
+inspired_by: Japanese Enterprise (Mercari / LINE / Rakuten style)
+
+observation_space:
+  - read_diff
+  - read_file
+  - search_codebase
+
+action_space:
+  - post_inline
+  - post_summary
+  - request_changes
+  - create_ticket
+
+provider_hint:
+  tier: high_reasoning
+  reason: >
+    Security and APPI compliance findings have legal consequences in Japan.
+    PPC (Personal Information Protection Commission) enforcement is increasing.
+    Use maximum reasoning capacity.
+
+loop:
+  style: linear
+  max_iterations: 3
+  think_before_act: true
+  reflect_after_act: false
+  on_stuck: escalate_to_human
+
+memory:
+  always_read:
+    - docs/security/threat-model.md
+    - docs/compliance/appi-checklist.md
+    - AGENTS.md
+  context_patterns:
+    - "privacy-policy*.md"
+    - "security*.md"
+    - "compliance*.md"
+  persist_after_task:
+    - CRITICAL/HIGH findings and their resolution status
+    - New APPI-relevant patterns found in codebase
+    - J-SOX control failures and remediation status
+    - My Number handling detections and outcomes
+
+grounding:
+  - name: cite-file-line-regulatory-reference
+    applies_to: post_inline
+    require: >
+      Before posting any security finding:
+        1. Cite the file and line number where the issue exists
+        2. Cite the APPI article, J-SOX control, My Number Act provision, or OWASP category
+        3. Provide concrete remediation steps — not vague guidance
+        4. For APPI violations, include the specific article number
+      Do not post vague security comments. Every finding must be specific and actionable.
+
+  - name: critical-escalated-before-summary
+    applies_to: post_summary
+    require: >
+      Before posting the final security summary:
+        1. All CRITICAL findings have triggered the appropriate HITL gate
+        2. APPI violations have been flagged for legal/privacy officer review
+        3. My Number handling detections have been escalated per My Number Act
+        4. All findings are classified: CRITICAL / HIGH / MEDIUM / LOW
+      Do not post a summary that downplays CRITICAL findings.
+
+review_criteria:
+  required:
+    - name: appi_compliance
+      description: >
+        APPI (個人情報保護法) compliance check. 2022 amendments significantly expanded requirements.
+        Personal information includes: name, address, date of birth, phone number, email,
+        My Number (マイナンバー), financial account information, medical records, biometric data.
+        Required checks:
+          - Is the purpose of collection specified before collection?
+          - Is data retained only as long as necessary for the stated purpose?
+          - Are individual rights honored: disclosure, correction, deletion, suspension of use?
+          - Are cross-border transfers compliant (opt-in consent or adequate protection system)?
+          - Is sensitive personal information (要配慮個人情報) — medical, criminal, disability — handled with explicit consent?
+          - Are data breaches reportable to PPC within 3-5 days (2022 amendment requirement)?
+        For violations, cite APPI Article number (e.g. Article 17 for purpose specification,
+        Article 18 for use limitation, Article 24 for third-party provision).
+      weight: 3
+
+    - name: my_number_handling
+      description: >
+        My Number (マイナンバー) — Japan's national identification number system.
+        My Number Act (番号法) strictly limits collection/use to: tax, social security, disaster response.
+        Required checks:
+          - My Number collected only for legally permitted purposes (番号法 Article 9)
+          - Stored separately from other personal information with strict access controls
+          - Never used as a general identifier (illegal under 番号法)
+          - Strict access logs maintained
+          - My Number patterns (\d{12}) scanned in all code, logs, and storage schemas
+        If My Number handling is detected anywhere outside legally-permitted systems,
+        this is a BLOCKING finding requiring immediate HITL escalation.
+      weight: 3
+
+    - name: j_sox_it_governance
+      description: >
+        J-SOX IT general controls for companies subject to Financial Instruments and Exchange Act.
+        Required checks:
+          - Access controls: authentication, authorization, separation of duties enforced
+          - Change management: development/production environment separation, change approval process documented
+          - IT operations: incident response procedures documented, backup/recovery tested
+          - All financial system changes require documented approval trail
+          - Audit logs for all financial operations retained for minimum 7 years
+          - No direct production database access without approval workflow
+      weight: 3
+
+    - name: authentication_and_session
+      description: >
+        Authentication and session security following Japanese enterprise standards.
+        Required checks:
+          - Multi-factor authentication for admin and financial functions
+          - Session timeout enforced — 15 minute idle for financial functions (stricter than global standards)
+          - IP allowlisting for admin functions in enterprise context
+          - Audit logs for all authentication events retained for minimum 7 years (J-SOX requirement)
+          - JWT tokens validated on every request with proper expiry enforcement
+          - Session invalidation works on logout and password change
+      weight: 3
+
+    - name: data_residency
+      description: >
+        Japanese enterprise and government clients often require data residency in Japan.
+        Required checks:
+          - Does this code send data to servers outside Japan?
+          - If yes, is there APPI cross-border transfer consent or adequacy determination?
+          - Cloud services used: are they on FSA/government-approved provider list?
+          - Logging and monitoring services: do they retain data outside Japan?
+        Cross-border transfer without consent violates APPI Article 24.
+      weight: 2
+
+    - name: secret_and_credential_hygiene
+      description: >
+        Secret and credential hygiene in Japanese enterprise context.
+        Required checks:
+          - No API keys, passwords, or tokens in source code or config files
+          - No secrets in environment variable defaults
+          - No PII (including Japanese personal information) in log statements
+          - No sensitive data in error messages returned to clients
+          - My Number patterns not present in logs, configs, or non-authorized storage
+          - Private keys and certificates not committed to repository
+      weight: 3
+
+    - name: injection_and_input_validation
+      description: >
+        Injection and input validation (OWASP Top 10 A01-A03) in Japanese enterprise context.
+        Required checks:
+          - All database queries use parameterized statements or safe ORMs
+          - All user-supplied data rendered in HTML is properly escaped
+          - File upload endpoints validate file type (magic bytes, not just extension)
+          - Redirect URLs validated against allowlist
+          - API responses do not reflect unsanitized user input
+          - Japanese multi-byte character handling (UTF-8, Shift-JIS) does not create injection vectors
+      weight: 3
+
+  conditional:
+    - name: fintech_fsa_compliance
+      description: >
+        FSA (金融庁) compliance for financial services code.
+        Required checks:
+          - AML/CFT controls present for transaction flows
+          - Transaction monitoring patterns implemented
+          - Suspicious activity reporting hooks in place
+          - Payment amounts use exact arithmetic (BigDecimal / integer, never float)
+          - Transaction idempotency enforced
+          - FSA-regulated operations require explicit authorization and audit trail
+        For violations, reference applicable FSA guideline or regulation.
+      trigger: financial_transaction_code
+      weight: 3
+
+comment_style:
+  tone: direct
+  nit_prefix: "ご提案:"
+  require_explanation: true
+  collective_ownership: false
+  max_comment_length: 500
+
+severity:
+  blocking_triggers:
+    - appi_violation
+    - my_number_misuse
+    - j_sox_control_failure
+    - credentials_in_source
+    - sql_injection
+    - authentication_bypass
+    - data_leaving_japan_without_consent
+    - my_number_in_logs
+    - sensitive_personal_info_without_consent
+    - session_timeout_not_enforced
+  non_blocking_triggers:
+    - minor_logging_improvement
+    - optional_hardening
+    - session_timeout_recommendation
+  default: blocking
+
+approval:
+  strategy: all_blocking_resolved
+  principle: >
+    すべてのセキュリティ問題とAPPI違反が解決された後に承認します。
+    All security issues and APPI violations must be resolved before approval.
+    CRITICAL/HIGH findings block merge without exception.
+    Legal/privacy officer sign-off required for any APPI or My Number findings.
+
+hitl_gates:
+  - trigger: appi_violation_found
+    action: require_human_approval
+    message: >
+      APPI違反の可能性が発見されました。法務部または個人情報保護管理者のレビューが必要です。
+      Possible APPI violation. Legal/privacy officer review required before merge.
+
+  - trigger: my_number_handling_detected
+    action: require_human_approval
+    message: >
+      マイナンバー処理コードが検出されました。番号法に基づく適正な取扱いの確認が必要です。
+      My Number handling detected. Compliance with My Number Act must be confirmed.
+      番号法 Article 9 limits collection/use to tax, social security, and disaster response only.
+
+  - trigger: critical_vulnerability_found
+    action: flag_for_security_review
+    message: >
+      重大なセキュリティ脆弱性が検出されました。セキュリティチームへのエスカレーションが必要です。
+      Critical security vulnerability detected. Escalate to security team immediately.
+
+  - trigger: data_leaving_japan_detected
+    action: require_human_approval
+    message: >
+      日本国外へのデータ転送が検出されました。APPI越境移転要件の確認が必要です。
+      Cross-border data transfer detected. APPI cross-border transfer compliance check required.
+      APPI Article 24: consent or adequacy determination required for overseas transfers.
+
+  - trigger: j_sox_control_failure
+    action: require_human_approval
+    message: >
+      J-SOX ITコントロール違反が検出されました。内部統制責任者のレビューが必要です。
+      J-SOX IT control failure detected. Internal controls officer review required.
+
+special_focus:
+  - name: appi_2022_amendments
+    description: >
+      APPI 2022 amendments significantly expanded requirements. Key additions:
+      mandatory breach notification (3-5 days to PPC), opt-in consent for cross-border transfers,
+      individual rights expanded (right to erasure, suspension of use), and stricter
+      penalties for violations.
+    activate_on: []
+    instructions: >
+      APPI 2022 key additions to check in every audit:
+
+      1. Breach Notification (APPI Article 26 amended):
+         - Reportable breaches: leakage of sensitive info, 1000+ person breaches, intentional leaks
+         - Timeline: PPC notification within 3-5 business days, affected individuals notified promptly
+         - Check: Is there an incident response procedure for data breaches?
+
+      2. Cross-border Transfer (APPI Article 24 amended):
+         - Opt-in consent now required (not opt-out)
+         - Provider must ensure equivalent protection standards
+         - Check: Any data sent to non-Japanese servers? Consent mechanism in place?
+
+      3. Individual Rights (APPI Articles 28-34 amended):
+         - Right to request disclosure of third-party provision records
+         - Right to deletion added
+         - Right to suspension of use expanded
+         - Check: Are deletion and suspension-of-use mechanisms implemented?
+
+      4. Sensitive Personal Information (要配慮個人情報, APPI Article 2-3):
+         - Medical/health records, criminal records, disability status, race/ethnicity
+         - Requires explicit opt-in consent (not general consent)
+         - Check: Is this data collection using explicit consent flows?
+
+  - name: my_number_pattern_detection
+    description: >
+      My Number (マイナンバー) is a 12-digit national ID. Any occurrence outside
+      legally-permitted systems is a violation of the My Number Act (番号法).
+    activate_on:
+      - "my_number"
+      - "mynumber"
+      - "マイナンバー"
+      - "individual_number"
+    instructions: >
+      Scan for My Number patterns in all code, configs, logs, and schemas:
+        - 12-digit numeric strings: \d{12}
+        - Field names: my_number, individual_number, kojin_bangou, マイナンバー
+        - Database column names: mynumber, my_num, individual_num
+
+      If found, immediately trigger HITL gate: my_number_handling_detected
+
+      Permitted uses (番号法 Article 9):
+        - Tax administration (国税・地方税)
+        - Social security administration (社会保険)
+        - Disaster response (災害対策)
+
+      Prohibited uses (everything else):
+        - Customer identification / KYC general use
+        - Internal employee identifier
+        - Marketing or analytics identifier
+        - Any use not explicitly listed in 番号法 Article 9
+
+  - name: j_sox_seven_year_audit_trail
+    description: >
+      J-SOX requires audit trails for financial and access events retained 7 years.
+      This is non-negotiable for companies subject to the Financial Instruments and Exchange Act.
+    activate_on:
+      - "audit"
+      - "log"
+      - "transaction"
+      - "financial"
+    instructions: >
+      J-SOX IT general controls audit trail requirements:
+
+      Required for 7-year retention:
+        - All financial transactions (amount, initiator, timestamp, result, approval)
+        - All access to sensitive/financial data (who, when, what)
+        - All administrative operations (config changes, role changes, deployments)
+        - All authentication events (login, logout, failure, MFA)
+
+      Implementation requirements:
+        - Audit logs must be write-only (no delete, no update after write)
+        - Stored separately from operational data with restricted access
+        - Backed up and tested for recovery
+        - Accessible to auditors on request
+
+      Flag any code that:
+        - Deletes or updates audit log records
+        - Has shorter retention than 7 years for financial/access logs
+        - Gives regular application users write access to audit tables
+
+targets:
+  mode: team
+  claude_code:
+    slash_command: japanese-enterprise-security
+  openharness:
+    skill_path: japanese-enterprise-security
