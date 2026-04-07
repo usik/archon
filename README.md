@@ -81,6 +81,7 @@ harness deploy-all --target openharness
 | Harness | Culture | Description |
 |---|---|---|
 | `toss-feature-dev` | 🇰🇷 Toss | 저점을 높이기 — context seeding → plan approval → implement → PR |
+| `aws-feature-dev` | Amazon / AWS | Working Backwards → 6-pager → implement → ORR → one-box → canary → global |
 
 ### Engineering / PR Review
 

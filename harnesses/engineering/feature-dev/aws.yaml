@@ -1,0 +1,486 @@
+name: aws-feature-dev
+version: 1.0.0
+description: >
+  Full development cycle following Amazon/AWS engineering culture.
+  Working Backwards from the customer → 6-pager design doc → implementation →
+  operational readiness review → gradual deployment (one-box → regional → global).
+culture: Amazon / AWS
+category: feature-dev
+
+action_space:
+  tools:
+    - read_file
+    - search_codebase
+    - write_file
+    - run_tests
+    - run_linter
+    - create_branch
+    - create_pr
+    - create_ticket
+    - search_docs
+    - read_context
+
+workflow:
+  phases:
+    - id: phase_0_working_backwards
+      name: "Phase 0 — Working Backwards (PR/FAQ)"
+      description: >
+        Amazon starts every feature by writing the Press Release and FAQ — not code.
+        This forces clarity on customer value before any design decision is made.
+        If you can't write the press release, you don't understand the customer problem.
+      steps:
+        - step: write_press_release
+          instruction: >
+            Draft a one-page internal press release as if the feature is already shipped.
+            Format:
+              Headline: [Feature name] — customer-facing, benefit-led
+              Sub-headline: One sentence on who benefits and how
+              Problem paragraph: What customer problem does this solve today?
+              Solution paragraph: How does the feature solve it?
+              Customer quote: Fictional quote from a happy customer (forces empathy)
+              Call to action: What does the customer do next?
+            The press release must be written in plain English — no jargon, no internal
+            acronyms. If you can't explain it simply, the design isn't ready.
+
+        - step: write_faq
+          instruction: >
+            Write two FAQ sections:
+            External FAQs (5+ questions a customer might ask):
+              - What problem does this solve?
+              - How is this different from what I do today?
+              - How do I get started?
+              - What are the pricing/quota implications?
+              - What happens if it fails?
+            Internal FAQs (5+ questions a teammate might ask):
+              - Why are we building this now?
+              - What are we NOT doing (explicit scope exclusions)?
+              - What are the top 3 risks?
+              - What does success look like in 30/90/180 days?
+              - What's the rollback plan?
+
+        - step: pr_faq_gate
+          instruction: >
+            HITL GATE: Share the PR/FAQ with the team lead and product owner.
+            Do not proceed to design until the PR/FAQ is approved.
+            Common rejection reasons:
+              - Customer benefit is unclear or vague
+              - Problem statement is internal-facing (cost, tech debt) not customer-facing
+              - FAQ doesn't address obvious failure modes
+              - "Customer quote" sounds like an engineer wrote it
+
+    - id: phase_1_design
+      name: "Phase 1 — 6-Pager Design Document"
+      description: >
+        Amazon bans PowerPoint for design reviews. Instead: a 6-page narrative memo.
+        The doc is read in silence at the start of the review meeting.
+        This eliminates the charisma advantage and forces the ideas to stand on their own.
+      steps:
+        - step: write_six_pager
+          instruction: >
+            Write the 6-pager design document. Structure:
+              1. Introduction (0.5 pages)
+                 - What are we building? One paragraph. No bullet points.
+                 - Link to the approved PR/FAQ.
+              2. Goals and Non-Goals (0.5 pages)
+                 - Goals: measurable outcomes (e.g., "reduce P99 latency from 200ms to 50ms")
+                 - Non-Goals: explicit exclusions to prevent scope creep
+              3. Tenets (0.25 pages)
+                 - 3-5 guiding principles for this feature, written as "We believe..."
+                 - These are the tiebreakers when teams disagree.
+                 - Example: "We believe operational simplicity outweighs feature richness."
+              4. Design (2+ pages)
+                 - Current state: how does the system work today?
+                 - Proposed change: what are you changing and why?
+                 - Data model changes (if any)
+                 - API contract changes (if any) — these are PERMANENT, design carefully
+                 - Failure modes and mitigations
+                 - Alternatives considered and why rejected
+              5. Security, Privacy, and Compliance (0.5 pages)
+                 - Threat model: who could abuse this feature?
+                 - Data classification: what data does this touch?
+                 - Compliance requirements (GDPR, SOC2, etc.)
+                 - Security review required? (yes/no + rationale)
+              6. Operational Excellence Plan (1 page)
+                 - Metrics: which CloudWatch/Datadog metrics prove the feature is healthy?
+                 - Alarms: what triggers a page? Define threshold and severity.
+                 - Dashboard: link to the runbook dashboard (create if not exists)
+                 - Runbook: step-by-step operator guide for the top 3 failure scenarios
+                 - Deployment plan: one-box → canary → regional → global (with go/no-go criteria)
+                 - Rollback plan: how to revert in < 15 minutes
+              Appendix (not counted in 6 pages):
+                 - Load test plan
+                 - Migration plan (if applicable)
+
+        - step: design_review
+          instruction: >
+            HITL GATE: Submit the 6-pager for design review. The review meeting format:
+            - First 15-20 minutes: everyone reads the doc in silence (no presenter summary)
+            - Remaining time: open discussion starting with the hardest questions
+            The doc must be approved (with or without revision requests) before Phase 2.
+            A "bar raiser" (a senior engineer not on the team) should be in the review.
+
+    - id: phase_2_implementation
+      name: "Phase 2 — Implementation"
+      description: >
+        Code the feature according to the approved design. Amazon emphasizes:
+        "Bias for Action" (move fast) balanced with "Insist on the Highest Standards"
+        (don't ship broken). The tension between these two LPs is intentional.
+      steps:
+        - step: seed_context
+          instruction: >
+            Before writing any code, read and understand:
+            - The approved PR/FAQ and 6-pager
+            - The existing code in the affected service areas
+            - The current API contracts (these are permanent — changes need design review)
+            - Existing tests and their patterns
+            - The operational runbook for this service
+            Document your understanding in a brief implementation plan comment.
+
+        - step: implement_with_tests
+          instruction: >
+            Implement the feature. Amazon coding standards:
+            - Write tests first (TDD) for all business logic
+            - Unit test coverage: 100% for new code, regression tests for changed code
+            - Integration tests must be written before the PR is opened
+            - Every new code path must be reachable by a test
+            - Immutable data structures preferred over mutable state
+            - Error handling: every error must be caught, logged, and either recovered or propagated
+            - Logging: structured logs for every significant state transition
+            Instrumentation (non-negotiable):
+            - Add a metric for every user-facing operation (count + latency + error rate)
+            - Add a metric for every external service call
+            - Ensure all new metrics emit to the approved dashboard namespace
+
+        - step: check_api_contracts
+          instruction: >
+            CRITICAL — API contracts are permanent at Amazon.
+            Before finalizing any API change:
+            - Is this a new API? Define the contract now — it cannot be changed later.
+            - Is this modifying an existing API? This requires design review escalation.
+            - Are all API changes backwards-compatible?
+            - Is the API versioned correctly?
+            - Are error codes and response shapes documented?
+            - Do not add required fields to existing response shapes (breaks callers).
+
+        - step: code_review_pr
+          instruction: >
+            Open a PR. Amazon PR standards:
+            - PR description must link to the 6-pager design doc
+            - PR description must list which Tenets from the design doc apply
+            - PR must include a testing evidence section (paste test output)
+            - PR must include a metrics/observability evidence section
+            - PR should be < 500 LOC for reviewability; split if larger
+            - Every PR needs at least 2 approvals: a domain expert + one other engineer
+            - Bar Raiser approval required for changes to core infrastructure or APIs
+
+    - id: phase_3_orr
+      name: "Phase 3 — Operational Readiness Review (ORR)"
+      description: >
+        Before any production deployment, Amazon requires an Operational Readiness Review.
+        This is a checklist-based gate that ensures the team is ready to operate the feature,
+        not just ship it. "You build it, you run it" means you own the pager.
+      steps:
+        - step: orr_checklist
+          instruction: >
+            Complete the ORR checklist. All items must be GREEN before deployment:
+
+            MONITORING:
+            [ ] Dashboard exists with all metrics from the Operational Excellence Plan
+            [ ] Alarms are configured with correct thresholds and SNS topics
+            [ ] Log groups are configured with appropriate retention
+            [ ] Distributed tracing is enabled for new service calls
+
+            RUNBOOK:
+            [ ] Runbook covers top 3 failure scenarios with step-by-step resolution
+            [ ] Runbook has been reviewed by someone who didn't write it
+            [ ] Escalation path is documented (who to call at 3am)
+            [ ] Runbook link is in the alarm description
+
+            LOAD TESTING:
+            [ ] Load test has been run at 2x expected peak traffic
+            [ ] P50/P99/P99.9 latency is within SLA at peak load
+            [ ] Error rate under load is below acceptable threshold
+            [ ] No resource exhaustion (CPU, memory, connections) observed
+
+            SECURITY:
+            [ ] Security review completed (if required by the design doc)
+            [ ] All inputs are validated and sanitized
+            [ ] Sensitive data is not logged
+            [ ] IAM permissions follow least privilege
+            [ ] No secrets in code or config files
+
+            ROLLBACK:
+            [ ] Rollback procedure tested in a staging environment
+            [ ] Rollback can be executed in < 15 minutes
+            [ ] Feature flag exists for immediate kill switch (if applicable)
+            [ ] Database migrations are backwards-compatible
+
+            CAPACITY:
+            [ ] Capacity planning completed for expected traffic
+            [ ] Auto-scaling policies are configured
+            [ ] Hard limits (quotas) are set to prevent runaway costs
+
+        - step: orr_approval
+          instruction: >
+            HITL GATE: The ORR must be reviewed and approved by:
+            - The on-call engineer for the affected service
+            - A senior engineer (or Bar Raiser)
+            A single RED item blocks deployment. There are no exceptions.
+
+    - id: phase_4_deployment
+      name: "Phase 4 — Gradual Deployment"
+      description: >
+        Amazon deploys in rings: one-box → canary → regional → global.
+        Each ring is a go/no-go gate. Rushing past rings has caused outages.
+        "Slow is smooth, smooth is fast."
+      steps:
+        - step: one_box
+          instruction: >
+            One-Box Deployment:
+            - Deploy to a single host/container in a non-production environment
+            - Run for at least 30 minutes with live traffic simulation
+            - Verify all metrics are green (no alarm state, latency within SLA)
+            - Check logs for unexpected errors or warnings
+            GO CRITERIA: Zero errors, latency within SLA, all alarms green
+            NO-GO CRITERIA: Any alarm fires, P99 > SLA, error rate > 0.01%
+            If NO-GO: investigate before proceeding, do not force the ring
+
+        - step: canary
+          instruction: >
+            Canary Deployment (1-5% of production traffic):
+            - Deploy to canary fleet
+            - Monitor for minimum 1 hour (or 1 full traffic cycle, whichever is longer)
+            - Compare metrics between canary and baseline fleet (A/B comparison)
+            - Customer-facing error rates must be identical between canary and baseline
+            GO CRITERIA: Canary metrics match or improve baseline metrics
+            NO-GO CRITERIA: Any metric degradation vs. baseline, customer complaints
+
+        - step: regional
+          instruction: >
+            Regional Deployment (one AWS region or geographic zone):
+            - Deploy to one full region
+            - Monitor for minimum 4 hours before proceeding to global
+            - Check regional dashboards for any anomalies
+            - Verify no increase in support tickets or customer-reported issues
+            GO CRITERIA: All regional metrics healthy, no customer impact
+            NO-GO CRITERIA: Any p99 degradation, error rate increase, or customer reports
+
+        - step: global
+          instruction: >
+            Global Deployment:
+            - Deploy to remaining regions
+            - Continue monitoring for 24 hours post-deployment
+            - Update the dashboard to mark deployment with an annotation event
+            - Update the runbook with any lessons learned from the deployment
+            - File a deployment record ticket with: date, who deployed, go/no-go notes
+            POST-DEPLOYMENT:
+            - Verify 24-hour metrics look healthy
+            - Close the feature ticket with a link to the dashboard
+            - Write a brief "what we learned" in the team's operational review
+
+review_criteria:
+  required:
+    - name: customer_backwards
+      description: >
+        Every decision traces back to a stated customer benefit.
+        If you cannot name the customer and their benefit, the decision is not justified.
+      weight: 3
+
+    - name: operational_excellence
+      description: >
+        The feature is operable on day one: metrics, alarms, runbook, and rollback plan exist
+        before any production traffic touches the code.
+      weight: 3
+
+    - name: security_and_least_privilege
+      description: >
+        IAM permissions are least-privilege, sensitive data is not logged,
+        inputs are validated, and security review was completed if required.
+      weight: 3
+
+    - name: api_contract_permanence
+      description: >
+        All API changes are backwards-compatible and treated as permanent contracts.
+        Breaking changes require design review escalation.
+      weight: 3
+
+    - name: test_coverage
+      description: >
+        100% unit test coverage for new business logic. Integration tests cover
+        the full happy path and top 3 failure scenarios.
+      weight: 2
+
+    - name: bar_raiser_standard
+      description: >
+        Code quality raises the bar — it is better than what existed before.
+        "Insist on the Highest Standards" is not a suggestion.
+      weight: 2
+
+    - name: six_pager_fidelity
+      description: >
+        Implementation matches the approved 6-pager. Deviations must be documented
+        and require a design doc update before merging.
+      weight: 2
+
+  conditional:
+    - name: tenets_alignment
+      description: >
+        Implementation decisions are consistent with the Tenets defined in the 6-pager.
+        When two valid approaches conflict, the Tenets are the tiebreaker.
+      trigger: design_doc_approved
+      weight: 1
+
+    - name: bias_for_action
+      description: >
+        Prefer reversible decisions made quickly over perfect decisions made slowly.
+        Use feature flags to separate deployment from release — ship the code, then turn it on.
+      trigger: implementation_phase_active
+      weight: 1
+
+comment_style:
+  tone: direct
+  require_explanation: true
+  nit_prefix: "Nit:"
+  praise_good_patterns: true
+  link_to_standards: true
+  custom_instructions: >
+    Frame all feedback in terms of the affected party: customer, operator, or fellow engineer.
+    For correctness issues, cite the relevant Leadership Principle.
+    For operational issues, ask "what would the on-call engineer see at 3am?"
+    For API issues, ask "what does this mean for every caller in 5 years?"
+
+severity:
+  blocking_triggers:
+    - api_contract_broken
+    - security_vulnerability
+    - missing_operational_metrics
+    - missing_rollback_plan
+    - test_coverage_below_threshold
+    - orr_checklist_red_item
+    - pii_data_logged
+    - missing_alarm_on_customer_facing_metric
+  non_blocking_triggers:
+    - style_preference
+    - minor_naming
+    - optional_optimization
+  default: non_blocking
+
+hitl_gates:
+  - trigger: pr_faq_written
+    action: require_human_approval
+    message: >
+      PR/FAQ must be approved by team lead and product owner before design work begins.
+      Review the press release for customer clarity and the FAQ for completeness.
+
+  - trigger: design_doc_complete
+    action: require_human_approval
+    message: >
+      6-pager design document ready for review. Schedule a design review meeting.
+      Include a Bar Raiser (senior engineer not on the feature team).
+      Meeting format: 15-20 min silent reading, then open discussion.
+
+  - trigger: orr_checklist_complete
+    action: require_human_approval
+    message: >
+      Operational Readiness Review checklist complete. Review all items before approving deployment.
+      A single RED item blocks production deployment. No exceptions.
+
+  - trigger: api_contract_change_detected
+    action: request_architecture_review
+    message: >
+      API contract change detected. All API changes at Amazon are treated as permanent.
+      Escalate to architecture review before proceeding. Document the change in the 6-pager.
+
+  - trigger: production_deploy
+    action: require_human_approval
+    message: >
+      Production deployment requires explicit approval. Confirm:
+      - ORR checklist is fully GREEN
+      - One-box and canary deployments were successful
+      - On-call engineer is aware and monitoring
+      - Rollback plan is ready to execute
+
+  - trigger: security_issue_found
+    action: flag_for_security_review
+    message: >
+      Security issue detected. Escalate to security team (AppSec).
+      Do not proceed until the issue is resolved and signed off.
+
+special_focus:
+  - name: working_backwards
+    description: >
+      The Working Backwards process is not optional ceremony — it is how Amazon ensures
+      every feature has genuine customer value.
+    instructions: >
+      Before any design or code work begins, write the PR/FAQ. The press release must
+      articulate the customer benefit in plain English. The FAQ must address failure modes.
+      If the PR/FAQ is weak, stop — the feature is not ready. Do not proceed to Phase 1
+      until the PR/FAQ is approved by the team lead and product owner.
+
+  - name: tenets
+    description: >
+      Tenets are written, binding principles that resolve team disagreements without escalation.
+    instructions: >
+      Every feature must define 3-5 Tenets in the 6-pager. Format: "We believe X."
+      When two engineers disagree on an approach, consult the Tenets first. If the Tenets
+      don't resolve the disagreement, they need to be better Tenets — update them.
+      Examples: "We believe operational simplicity outweighs feature richness."
+      "We believe backwards compatibility is non-negotiable."
+
+  - name: operational_excellence_first
+    description: >
+      "You build it, you run it." Operational readiness is a primary success criterion,
+      not an afterthought.
+    instructions: >
+      Every feature must have metrics, alarms, a runbook, and a rollback plan defined in
+      the 6-pager BEFORE implementation begins. The ORR checklist must be fully GREEN
+      before any production deployment. If a metric doesn't exist for a user-facing
+      operation, add it. If an alarm doesn't exist for a customer-facing error rate, add it.
+
+  - name: gradual_deployment_discipline
+    description: >
+      Deployment rings prevent outages. Skipping rings is not a time savings — it is a
+      risk transfer to customers.
+    instructions: >
+      Always follow the ring sequence: one-box → canary → regional → global.
+      Each ring has explicit go/no-go criteria. A NO-GO is not a failure — it is the system
+      working correctly. Investigate the cause before proceeding. Never skip a ring under
+      schedule pressure. If the deadline requires skipping a ring, the deadline is wrong.
+
+  - name: leadership_principles_in_code
+    description: >
+      Amazon Leadership Principles surface in daily technical decisions, not just in
+      hiring loops.
+    instructions: >
+      Apply these LPs at every decision point:
+        Customer Obsession: Can you name the customer and their benefit? If not, reconsider.
+        Insist on the Highest Standards: Does this raise the bar vs. what existed before?
+        Bias for Action: Is this decision reversible? Use feature flags; ship, then enable.
+        Dive Deep: Don't accept "it works in tests" — understand the root cause.
+        Ownership: If this pages someone at 3am, do you know exactly what to do?
+      When documenting a technical decision, cite the LP that drove it.
+
+  - name: six_pager_as_source_of_truth
+    description: >
+      The 6-pager is a living document. Implementation must reflect the approved design.
+    instructions: >
+      If implementation diverges from the 6-pager, update the 6-pager first, then implement.
+      The 6-pager is the source of truth; the code is its implementation.
+      PR descriptions must link to the 6-pager section they implement.
+      Post-launch, update the 6-pager with actual metrics and lessons learned.
+
+approval:
+  strategy: all_blocking_resolved
+  principle: >
+    All HITL gates cleared in sequence, ORR checklist fully GREEN,
+    one-box and canary deployments successful, Bar Raiser approval obtained.
+
+size:
+  warn_above_loc: 500
+  block_above_loc: null
+  split_advice: >
+    PRs over 500 LOC are hard to review thoroughly. Split into:
+    1. Infrastructure / scaffolding PR (no behavior change)
+    2. Feature implementation PR
+    3. Test PR (if tests significantly add to size)
+    Atomic PRs are easier to roll back and easier to reason about in post-incident reviews.

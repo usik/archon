@@ -81,6 +81,7 @@ harness deploy-all --target openharness
 | 하네스 | 문화 | 설명 |
 |---|---|---|
 | `toss-feature-dev` | 🇰🇷 토스 | 저점을 높이기 — 컨텍스트 시딩 → 플랜 승인 → 구현 → PR |
+| `aws-feature-dev` | Amazon / AWS | Working Backwards → 6-페이저 → 구현 → ORR → 원박스 → 카나리 → 글로벌 |
 
 ### 엔지니어링 / PR 리뷰
 
